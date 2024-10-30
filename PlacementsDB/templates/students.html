@@ -1,0 +1,393 @@
+{% extends 'base.html' %}
+{% block head %}
+<title>PlacementsDB - Students</title>
+<style>
+    .student-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        padding: 20px;
+    }
+
+    .student-card {
+        background: #fffeef;
+        border-radius: 10px;
+        padding: 15px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+
+    .student-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .student-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .student-name {
+        font-size: 1.2em;
+        font-weight: bold;
+        color: #333;
+    }
+
+    .student-id {
+        color: #666;
+        font-size: 0.9em;
+    }
+
+    .student-info {
+        margin: 10px 0;
+        color: #444;
+    }
+
+    .student-skills {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 10px;
+    }
+
+    .skill-tag {
+        background: #e9ecef;
+        padding: 4px 8px;
+        border-radius: 15px;
+        font-size: 0.8em;
+        color: #495057;
+    }
+
+    .filters {
+        background: #fffeef;
+        padding: 15px;
+        margin: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .filter-group {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 10px;
+    }
+
+    .filter-select {
+        padding: 8px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+    }
+
+    .student-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin: 20px;
+    }
+
+    .stat-card {
+        background: #fffeef;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+
+    .stat-number {
+        font-size: 1.5em;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+
+    .stat-label {
+        color: #666;
+        font-size: 0.9em;
+    }
+
+    .view-more {
+        color: #007bff;
+        text-decoration: none;
+        font-size: 0.9em;
+        display: block;
+        margin-top: 10px;
+    }
+
+    .publications-list {
+        margin-top: 10px;
+        font-size: 0.9em;
+    }
+
+    .publication-item {
+        color: #666;
+        margin-bottom: 5px;
+    }
+
+    .projects-list {
+        margin-top: 10px;
+    }
+
+    .project-item {
+        background: #fffeef;
+        padding: 8px;
+        border-radius: 5px;
+        margin-bottom: 5px;
+        font-size: 0.9em;
+    }
+
+    .quick-stats {
+    background: #fffeef;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .quick-stats h3 {
+        color: #2c3e50;
+        font-size: 1.2em;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #fffef7;
+    }
+
+    .stats-section {
+        margin-bottom: 20px;
+    }
+
+    .stats-section-title {
+        color: #666;
+        font-size: 0.9em;
+        font-weight: 600;
+        margin-bottom: 10px;
+    }
+
+    .skill-stat-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .skill-name {
+        color: #495057;
+        font-size: 0.9em;
+    }
+
+    .skill-count {
+        background: #e9ecef;
+        padding: 3px 8px;
+        border-radius: 12px;
+        font-size: 0.8em;
+        color: #666;
+    }
+
+    .skill-bar {
+        height: 4px;
+        background: #e9ecef;
+        border-radius: 2px;
+        margin-top: 5px;
+        overflow: hidden;
+    }
+
+    .skill-bar-fill {
+        height: 100%;
+        background: #007bff;
+        border-radius: 2px;
+        transition: width 0.3s ease;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<nav>
+    <div class="nav-left">
+        <a href="#"><img src="{{ url_for('static', filename='icons/SPIT_logo.png') }}" class="logo"></a>
+        <ul>
+            <li><img src="{{ url_for('static', filename='icons/bell-icon.png') }}"></li>
+            <li><img src="{{ url_for('static', filename='icons/sliders-icon.png') }}"></li>
+        </ul>
+    </div>
+    <div class="page-name">
+        <h1>Students</h1>
+    </div>
+    <div class="nav-right">
+        <div class="search-box">
+            <img src="{{ url_for('static', filename='icons/search-icon.png') }}">
+            <input type="text" placeholder="Search students..." id="studentSearch">
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="left-sidebar">
+        <div class="imp-links">
+            <a href="{{ url_for('home') }}"><img src="{{ url_for('static', filename='icons/home-icon.png') }}">Home</a>
+            <a href="{{ url_for('help') }}"><img src="{{ url_for('static', filename='icons/support-icon.png') }}">Help</a>
+            <a href="{{ url_for('companies') }}"><img src="{{ url_for('static', filename='icons/headphone-headset-icon.svg') }}">Companies</a>
+        </div>
+    </div>
+   
+    <div class="main-content">
+        <!-- Statistics Section -->
+        <div class="student-stats">
+            <div class="stat-card">
+                <div class="stat-number">{{ total_students }}</div>
+                <div class="stat-label">Total Students</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ placed_students }}</div>
+                <div class="stat-label">Placed Students</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ avg_projects }}</div>
+                <div class="stat-label">Avg Projects</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ total_publications }}</div>
+                <div class="stat-label">Publications</div>
+            </div>
+        </div>
+
+        <!-- Filters Section -->
+        <div class="filters">
+            <div class="filter-group">
+                <select class="filter-select" id="skillFilter">
+                    <option value="">Filter by Skill</option>
+                    {% for skill in skills %}
+                    <option value="{{ skill }}">{{ skill }}</option>
+                    {% endfor %}
+                </select>
+                <select class="filter-select" id="courseFilter">
+                    <option value="">Filter by Course</option>
+                    {% for course in courses %}
+                    <option value="{{ course.course_id }}">{{ course.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- Students Grid -->
+        <div class="student-grid">
+            {% for student in students %}
+            <div class="student-card">
+                <div class="student-header">
+                    <div class="student-name">{{ student.name }}</div>
+                    <div class="student-id">{{ student.student_id }}</div>
+                </div>
+                <div class="student-info">
+                    <div>📧 {{ student.email }}</div>
+                    <div>📱 {{ student.phone }}</div>
+                    <div>📍 {{ student.address.city }}, {{ student.address.state }}</div>
+                </div>
+                <div class="student-skills">
+                    {% for skill in student.skills[:5] %}
+                    <span class="skill-tag">{{ skill }}</span>
+                    {% endfor %}
+                    {% if student.skills|length > 5 %}
+                    <span class="skill-tag">+{{ student.skills|length - 5 }}</span>
+                    {% endif %}
+                </div>
+                {% if student.projects %}
+                <div class="projects-list">
+                    <strong>Recent Projects:</strong>
+                    {% for project in student.projects[:2] %}
+                    <div class="project-item">{{ project }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% if student.publications %}
+                <div class="publications-list">
+                    <strong>Publications:</strong>
+                    {% for pub in student.publications[:2] %}
+                    <div class="publication-item">{{ pub }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <a href="#" class="view-more">View Full Profile →</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="right-sidebar">
+        <div class="quick-stats">
+            <h3>Quick Stats</h3>
+            
+            <div class="stats-section">
+                <div class="stats-section-title">Most Common Skills</div>
+                {% for skill, count in top_skills %}
+                <div class="skill-stat-item">
+                    <div>
+                        <div class="skill-name">{{ skill }}</div>
+                        <div class="skill-bar">
+                            <div class="skill-bar-fill" style="width: {{ (count / max_skill_count * 100) if max_skill_count > 0 else 0 }}%;"></div>
+                        </div>
+                    </div>
+                    <span class="skill-count">{{ count }}</span>
+                </div>
+                {% endfor %}
+            </div>                      
+    
+            <div class="stats-section">
+                <div class="stats-section-title">Department Distribution</div>
+                {% for course in courses %}
+                <div class="skill-stat-item">
+                    <span class="skill-name">{{ course.name }}</span>
+                    <span class="skill-count">{{ course.student_count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+    
+            <div class="stats-section">
+                <div class="stats-section-title">Placement Status</div>
+                <div class="skill-stat-item">
+                    <span class="skill-name">Placed</span>
+                    <span class="skill-count">{{ placed_students }}</span>
+                </div>
+                <div class="skill-stat-item">
+                    <span class="skill-name">Unplaced</span>
+                    <span class="skill-count">{{ total_students - placed_students }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+document.getElementById('studentSearch').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const studentCards = document.querySelectorAll('.student-card');
+    
+    studentCards.forEach(card => {
+        const name = card.querySelector('.student-name').textContent.toLowerCase();
+        const id = card.querySelector('.student-id').textContent.toLowerCase();
+        const skills = Array.from(card.querySelectorAll('.skill-tag')).map(tag => tag.textContent.toLowerCase());
+        
+        if (name.includes(searchTerm) || id.includes(searchTerm) || skills.some(skill => skill.includes(searchTerm))) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+});
+
+document.getElementById('skillFilter').addEventListener('change', function(e) {
+    const selectedSkill = e.target.value.toLowerCase();
+    const studentCards = document.querySelectorAll('.student-card');
+    
+    if (!selectedSkill) {
+        studentCards.forEach(card => card.style.display = '');
+        return;
+    }
+    
+    studentCards.forEach(card => {
+        const skills = Array.from(card.querySelectorAll('.skill-tag')).map(tag => tag.textContent.toLowerCase());
+        if (skills.includes(selectedSkill)) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

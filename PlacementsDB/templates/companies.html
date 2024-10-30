@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+{% block head %}
+<title>PlacementsDB - Companies</title>
+<style>
+    .company-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 20px;
+        padding: 20px;
+    }
+
+    .company-card {
+        background: #fffeef;
+        border-radius: 10px;
+        padding: 15px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+
+    .company-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .company-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+
+    .company-name {
+        font-size: 1.2em;
+        font-weight: bold;
+        color: #333;
+    }
+
+    .company-id {
+        color: #666;
+        font-size: 0.9em;
+    }
+
+    .company-info {
+        margin: 10px 0;
+        color: #444;
+    }
+
+    .company-industry {
+        font-size: 0.9em;
+        color: #007bff;
+    }
+
+    .filters {
+        background: #fffeef;
+        padding: 15px;
+        margin: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .filter-group {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 10px;
+    }
+
+    .filter-select {
+        padding: 8px;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+    }
+
+    .company-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin: 20px;
+    }
+
+    .stat-card {
+        background: #fffeef;
+        padding: 15px;
+        border-radius: 10px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+
+    .stat-number {
+        font-size: 1.5em;
+        font-weight: bold;
+        color: #2c3e50;
+    }
+
+    .stat-label {
+        color: #666;
+        font-size: 0.9em;
+    }
+
+    .view-more {
+        color: #007bff;
+        text-decoration: none;
+        font-size: 0.9em;
+        display: block;
+        margin-top: 10px;
+    }
+
+</style>
+{% endblock %}
+
+{% block body %}
+<nav>
+    <div class="nav-left">
+        <a href="#"><img src="{{ url_for('static', filename='icons/SPIT_logo.png') }}" class="logo"></a>
+        <ul>
+            <li><img src="{{ url_for('static', filename='icons/bell-icon.png') }}"></li>
+            <li><img src="{{ url_for('static', filename='icons/sliders-icon.png') }}"></li>
+        </ul>
+    </div>
+    <div class="page-name">
+        <h1>Companies</h1>
+    </div>
+    <div class="nav-right">
+        <div class="search-box">
+            <img src="{{ url_for('static', filename='icons/search-icon.png') }}">
+            <input type="text" placeholder="Search companies..." id="companySearch">
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="left-sidebar">
+        <div class="imp-links">
+            <a href="{{ url_for('home') }}"><img src="{{ url_for('static', filename='icons/home-icon.png') }}">Home</a>
+            <a href="{{ url_for('help') }}"><img src="{{ url_for('static', filename='icons/support-icon.png') }}">Help</a>
+            <a href="{{ url_for('students') }}"><img src="{{ url_for('static', filename='icons/info-circle-icon.png') }}">Students</a>
+        </div>
+    </div>
+   
+    <div class="main-content">
+        <!-- Statistics Section -->
+        <div class="company-stats">
+            <div class="stat-card">
+                <div class="stat-number">{{ total_companies }}</div>
+                <div class="stat-label">Total Companies</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ active_companies }}</div>
+                <div class="stat-label">Active Companies</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ total_projects }}</div>
+                <div class="stat-label">Total Projects</div>
+            </div>
+        </div>
+
+        <!-- Filters Section -->
+        <div class="filters">
+            <div class="filter-group">
+                <select class="filter-select" id="industryFilter">
+                    <option value="">Filter by Industry</option>
+                    {% for industry in industries %}
+                    <option value="{{ industry }}">{{ industry }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- Companies Grid -->
+        <div class="company-grid">
+            {% for company in companies %}
+            <div class="company-card">
+                <div class="company-header">
+                    <div class="company-name">{{ company.name }}</div>
+                    <div class="company-id">{{ company.company_id }}</div>
+                </div>
+                <div class="company-info">
+                    <div>Location: {{ company.location }}</div>
+                    <div class="company-industry">Industry: {{ company.industry }}</div>
+                </div>
+                <div>
+                    <strong>Projects:</strong>
+                    {% for project in company.projects[:2] %}
+                    <div class="project-item">{{ project }}</div>
+                    {% endfor %}
+                </div>
+                <a href="#" class="view-more">View Full Profile →</a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="right-sidebar">
+
+    </div>
+    
+<script>
+document.getElementById('companySearch').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const companyCards = document.querySelectorAll('.company-card');
+    
+    companyCards.forEach(card => {
+        const name = card.querySelector('.company-name').textContent.toLowerCase();
+        const id = card.querySelector('.company-id').textContent.toLowerCase();
+        
+        if (name.includes(searchTerm) || id.includes(searchTerm)) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+});
+
+document.getElementById('industryFilter').addEventListener('change', function(e) {
+    const selectedIndustry = e.target.value.toLowerCase();
+    const companyCards = document.querySelectorAll('.company-card');
+    
+    if (!selectedIndustry) {
+        companyCards.forEach(card => card.style.display = '');
+        return;
+    }
+    
+    companyCards.forEach(card => {
+        const industry = card.querySelector('.company-industry').textContent.toLowerCase();
+        if (industry.includes(selectedIndustry)) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+});
+</script>
+{% endblock %}

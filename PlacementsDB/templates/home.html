@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<title>PlacementsDB - Home</title>
+{% endblock %}
+
+{% block body %}
+<nav>
+    <div class="nav-left">
+        <a href="#"><img src="{{ url_for('static', filename='icons/SPIT_logo.png') }}" class="logo"></a>
+        <ul>
+            <li><img src="{{ url_for('static', filename='icons/bell-icon.png') }}"></li>
+            <li><img src="{{ url_for('static', filename='icons/sliders-icon.png') }}"></li>
+        </ul>
+    </div>
+    <div class="page-name">
+        <h1>Home</h1>
+    </div>
+    <div class="nav-right">
+        <div class="search-box">
+            <img src="{{ url_for('static', filename='icons/search-icon.png') }}">
+            <input type="text" placeholder="Search">
+        </div>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="left-sidebar">
+        <div class="imp-links">
+            <a href="{{ url_for('students') }}"><img src="{{ url_for('static', filename='icons/info-circle-icon.png') }}">Students</a>
+            <a href="{{ url_for('help') }}"><img src="{{ url_for('static', filename='icons/support-icon.png') }}">Help</a>
+            <a href="{{ url_for('companies') }}"><img src="{{ url_for('static', filename='icons/headphone-headset-icon.svg') }}">Companies</a>
+        </div>
+    </div>
+    
+    <div class="main-content">
+
+    </div>
+
+    <div class="right-sidebar">
+
+    </div>
+</div>
+{% endblock %}
