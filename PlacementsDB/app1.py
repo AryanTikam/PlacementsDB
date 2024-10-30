@@ -36,7 +36,7 @@ def home():
 def students():
     # Get all students from MongoDB
     students_data = list(mongo.db.students.find())
-    
+
     # Calculate statistics
     total_students = len(students_data)
     total_publications = sum(len(student.get('publications', [])) for student in students_data)
@@ -56,9 +56,18 @@ def students():
     max_skill_count = max(skill_counts.values()) if skill_counts else 1
     top_skills = [(skill, count) for skill, count in skill_counts.most_common(5)]
     
-    # Get all courses
+    # Get all courses and calculate student counts for each course
     courses = list(mongo.db.courses.find())
-    
+    course_stats = []
+    for course in courses:
+        course_name = course.get('name', 'Unknown Course')
+        course_id = course.get('course_id')  # Use 'course_id' field as a string
+
+        # Count students enrolled in this course
+        student_count = mongo.db.students.count_documents({'courses': course_id})
+        course_stats.append({'name': course_name, 'student_count': student_count})
+
+
     # Get unique skills for filter
     unique_skills = sorted(list(set(all_skills)))
     
@@ -71,7 +80,7 @@ def students():
         total_publications=total_publications,
         top_skills=top_skills,
         skills=unique_skills,
-        courses=courses,
+        courses=course_stats,  # Use course_stats for the template
         max_skill_count=max_skill_count  # Add this new variable
     )
 

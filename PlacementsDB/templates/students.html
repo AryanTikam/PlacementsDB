@@ -196,6 +196,7 @@
         border-radius: 2px;
         transition: width 0.3s ease;
     }
+
 </style>
 {% endblock %}
 
@@ -338,21 +339,18 @@
                 </div>
                 {% endfor %}
             </div>
+            
     
             <div class="stats-section">
-                <div class="stats-section-title">Placement Status</div>
+                <div class="stats-section-title">Department Distribution</div>
+                {% for course in courses %}
                 <div class="skill-stat-item">
-                    <span class="skill-name">Placed</span>
-                    <span class="skill-count">{{ placed_students }}</span>
+                    <span class="skill-name">{{ course.name }}</span>
+                    <span class="skill-count">{{ course.student_count }}</span>
                 </div>
-                <div class="skill-stat-item">
-                    <span class="skill-name">Unplaced</span>
-                    <span class="skill-count">{{ total_students - placed_students }}</span>
-                </div>
+                {% endfor %}
             </div>
-        </div>
-    </div>
-
+            
 <script>
 document.getElementById('studentSearch').addEventListener('input', function(e) {
     const searchTerm = e.target.value.toLowerCase();
