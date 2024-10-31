@@ -19,6 +19,7 @@ db.skills.drop()
 db.courses.drop()
 db.certificates.drop()
 db.publications.drop()
+db.interviews.drop()  # Clear interviews collection
 
 # Predefined lists for random selection
 skills_list = [
@@ -75,6 +76,7 @@ for i in range(20):
         'phone': fake.phone_number(),
         'website': fake.url(),
         'projects': [],
+        'average_ctc': random.randint(50000, 150000),  # Add average CTC
         'created_at': datetime.utcnow()
     }
     companies_data.append(company)
@@ -176,15 +178,13 @@ for project in projects_data:
 print("Generating publications...")
 publications_data = []
 for i in range(30):
-    # Generate a random datetime instead of date
     pub_date = datetime.now() - timedelta(days=random.randint(0, 1095))  # Up to 3 years ago
-    
     publication = {
         'publication_id': f'PUB{str(i+1).zfill(3)}',
         'title': fake.sentence(),
         'authors': random.sample([s['student_id'] for s in students_data], random.randint(1, 3)),
         'journal': fake.company() + ' Journal',
-        'publication_date': pub_date,  # Now using datetime instead of date
+        'publication_date': pub_date,
         'doi': f'10.{random.randint(1000,9999)}/{uuid.uuid4().hex[:8]}',
         'citations': random.randint(0, 100),
         'created_at': datetime.utcnow()
@@ -201,6 +201,34 @@ for publication in publications_data:
             {'$push': {'publications': publication['publication_id']}}
         )
 
+# Generate Interviews
+print("Generating interviews...")
+interviews_data = []
+for i in range(20):
+    interview_date = fake.date_between(start_date='-1y', end_date='today')
+    # Convert to datetime.datetime
+    interview_datetime = datetime.combine(interview_date, datetime.min.time())
+    interview = {
+        'interview_id': f'INT{str(i+1).zfill(3)}',
+        'company_id': random.choice(companies_data)['company_id'],
+        'date': interview_datetime,
+        'time': fake.time(),
+        'location': fake.city(),
+        'interviewer': fake.name(),
+        'student_ids': random.sample([s['student_id'] for s in students_data], random.randint(1, 3)),
+        'created_at': datetime.utcnow()
+    }
+    interviews_data.append(interview)
+db.interviews.insert_many(interviews_data)
+
+# Update company interviews
+print("Updating company interviews...")
+for interview in interviews_data:
+    db.companies.update_one(
+        {'company_id': interview['company_id']},
+        {'$push': {'interviews': interview['interview_id']}}
+    )
+
 print("Data generation completed!")
 
 # Print some statistics
@@ -212,3 +240,4 @@ print(f"Skills: {db.skills.count_documents({})}")
 print(f"Courses: {db.courses.count_documents({})}")
 print(f"Certificates: {db.certificates.count_documents({})}")
 print(f"Publications: {db.publications.count_documents({})}")
+print(f"Interviews: {db.interviews.count_documents({})}")

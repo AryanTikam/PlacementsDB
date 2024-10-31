@@ -1,0 +1,145 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<title>PlacementsDB - {{ company.name }} Profile</title>
+<style>
+    .company-profile {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 20px;
+        padding: 20px;
+        width: 100%;
+    }
+
+    .company-card {
+        background: #fffeef;
+        border-radius: 10px;
+        padding: 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease;
+    }
+
+    .company-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .company-header {
+        display: flex;
+        justify-content: space-between; /* This ensures the items are spaced apart */
+        align-items: center;
+    }
+
+    .company-name {
+        font-size: 1.5em;
+        font-weight: bold;
+        color: #333;
+    }
+
+    .company-id {
+        color: #666;
+        font-size: 0.9em;
+        text-align: right; /* Ensures right alignment of company ID */
+    }
+
+    .company-description {
+        margin: 10px 0;
+        color: #555;
+    }
+
+    .average-ctc {
+        color: #007bff; /* You can adjust the color as needed */
+        font-weight: bold;
+        margin-top: 10px; /* Adds some space above average CTC */
+        /* Removed text-align to keep it left-aligned */
+    }
+
+    .interview-section {
+        margin-top: 20px; /* Adds space above the interview section */
+    }
+
+    .interview-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); /* Responsive grid */
+        gap: 20px; /* Space between interview cards */
+    }
+
+    .interview-card {
+        background: #fffeef;
+        border-radius: 10px;
+        padding: 20px; /* Increased padding for inner content */
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease; /* Added transition for hover effect */
+    }
+
+    .interview-card:hover {
+        transform: translateY(-5px); /* Hover animation */
+    }
+
+    .interview-header {
+        display: flex;
+        justify-content: space-between;
+        font-weight: bold;
+    }
+
+    .interview-detail {
+        font-size: 0.9em;
+        color: #444;
+        margin-top: 5px; /* Added space between details */
+    }
+
+    .no-interviews {
+        color: #666;
+        font-style: italic;
+    }
+
+    .back-link {
+        color: #007bff;
+        text-decoration: none;
+        font-size: 0.9em;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container">
+    <div class="company-profile">
+        <div class="company-card">
+            <div class="company-header">
+                <h1 class="company-name">{{ company.name }}</h1>
+                <span class="company-id">{{ company.company_id }}</span>
+            </div>
+            <p class="company-description">{{ company.description or "No description available." }}</p>
+            <span class="average-ctc">Average CTC: {{ company.average_ctc | default("N/A") }}</span>
+        </div>
+
+        <div class="interview-section">
+            <h2>Scheduled Interviews</h2>
+            <br>
+            {% if interviews %}
+                <div class="interview-grid">  <!-- Added interview grid -->
+                    {% for interview in interviews %}
+                    <div class="interview-card">
+                        <div class="interview-header">
+                            <span>Date: {{ interview.date }}</span>
+                            <span>Time: {{ interview.time }}</span>
+                        </div>
+                        <div class="interview-detail">Location: {{ interview.location }}</div>
+                        <div class="interview-detail">Interviewer: {{ interview.interviewer }}</div>
+                        <div class="interview-detail">
+                            Students:
+                            {% for student_id in interview.student_ids %}
+                            {{ student_id }}{% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="no-interviews">No interviews scheduled for this company.</p>
+            {% endif %}
+        </div>
+
+        <a href="{{ url_for('companies') }}" class="back-link">← Back to Companies</a>
+    </div>
+</div>
+{% endblock %}

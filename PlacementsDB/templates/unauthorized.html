@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+{% block head %}
+<title>PlacementsDB - Unauthorized Access</title>
+<style>
+    .unauthorized-container {
+        max-width: 800px;
+        margin: 40px auto;
+        padding: 40px;
+        text-align: center;
+        background: #fffeef;
+        border-radius: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        animation: slideIn 0.5s ease-out;
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .error-code {
+        font-size: 120px;
+        font-weight: 700;
+        color: #e63946;
+        margin: 0;
+        line-height: 1;
+        text-shadow: 2px 2px 0 rgba(230, 57, 70, 0.2);
+    }
+
+    .error-message {
+        font-size: 28px;
+        color: #2b2d42;
+        margin: 20px 0;
+        font-weight: 600;
+    }
+
+    .error-description {
+        color: #6c757d;
+        font-size: 18px;
+        margin: 20px auto;
+        max-width: 600px;
+        line-height: 1.6;
+    }
+
+    .action-buttons {
+        margin-top: 40px;
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+    }
+
+    .action-button {
+        padding: 12px 30px;
+        border-radius: 25px;
+        font-size: 16px;
+        font-weight: 500;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .primary-button {
+        background: #2b2d42;
+        color: white;
+    }
+
+    .primary-button:hover {
+        background: #1a1b2e;
+        transform: translateY(-2px);
+    }
+
+    .secondary-button {
+        background: #f8f9fa;
+        color: #2b2d42;
+        border: 2px solid #2b2d42;
+    }
+
+    .secondary-button:hover {
+        background: #e9ecef;
+        transform: translateY(-2px);
+    }
+
+    .lock-animation {
+        width: 200px;
+        height: 200px;
+        margin: 20px auto;
+        animation: bounce 2s infinite;
+    }
+
+    @keyframes bounce {
+        0%, 100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-10px);
+        }
+    }
+
+    .user-type-message {
+        background: #f8f9fa;
+        padding: 15px 25px;
+        border-radius: 12px;
+        margin: 30px auto;
+        max-width: 500px;
+        border-left: 4px solid #e63946;
+    }
+
+    .user-type-message strong {
+        color: #2b2d42;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="unauthorized-container">
+    <div class="lock-animation">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Lock Body -->
+            <path d="M16 9V7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7V9" stroke="#2b2d42" stroke-width="2" stroke-linecap="round"/>
+            <!-- Lock Base -->
+            <rect x="5" y="9" width="14" height="12" rx="2" fill="#e63946"/>
+            <!-- Keyhole -->
+            <circle cx="12" cy="15" r="2" fill="#fff"/>
+            <path d="M12 15V18" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+    </div>
+
+    <h1 class="error-code">403</h1>
+    <h2 class="error-message">Access Denied</h2>
+    
+    {% if user_type %}
+    <div class="user-type-message">
+        <p>You are logged in as a <strong>{{ user_type|capitalize }}</strong> user. 
+        This page is not accessible with your current permissions.</p>
+    </div>
+    {% endif %}
+
+    <p class="error-description">
+        Looks like you don't have permission to access this page. 
+        Please make sure you're logged in with the correct account type or contact the administrator if you believe this is a mistake.
+    </p>
+
+    <div class="action-buttons">
+        <a href="{{ url_for('login') }}" class="action-button primary-button">Back to Login</a>
+        {% if user_type %}
+            <a href="{{ url_for(user_type + '_home') }}" class="action-button secondary-button">Go to Dashboard</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

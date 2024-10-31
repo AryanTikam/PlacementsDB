@@ -1,16 +1,57 @@
 {% extends 'base.html' %}
-
 {% block head %}
 <title>PlacementsDB - Help</title>
+<style>
+.help-section {
+    padding: 20px;
+    background: #fffef7;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.help-section h2 {
+    color: #333;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #cac6b1;
+    padding-bottom: 10px;
+}
+
+.help-item {
+    margin-bottom: 15px;
+    padding: 10px;
+    border-left: 3px solid #007bff;
+    background: #fffeef;
+}
+
+.help-item h3 {
+    color: #007bff;
+    margin-bottom: 8px;
+}
+
+.help-item p {
+    color: #666;
+    line-height: 1.5;
+}
+
+.contact-support {
+    background: #cac6b1;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 20px;
+    text-align: center;
+}
+
+</style>
 {% endblock %}
 
 {% block body %}
 <nav>
     <div class="nav-left">
-        <a href="#"><img src="{{ url_for('static', filename='icons/SPIT_logo.png') }}" class="logo"></a>
+        <a href="#"><img src="{{ url_for('static', filename='icons/SPIT_logo.png') }}" class="logo" alt="SPIT Logo"></a>
         <ul>
-            <li><img src="{{ url_for('static', filename='icons/bell-icon.png') }}"></li>
-            <li><img src="{{ url_for('static', filename='icons/sliders-icon.png') }}"></li>
+            <li><img src="{{ url_for('static', filename='icons/bell-icon.png') }}" alt="Notifications"></li>
+            <li><a href="{{ url_for('logout') }}"><img src="{{ url_for('static', filename='icons/exit-icon.png') }}"></a></li>
         </ul>
     </div>
     <div class="page-name">
@@ -18,8 +59,8 @@
     </div>
     <div class="nav-right">
         <div class="search-box">
-            <img src="{{ url_for('static', filename='icons/search-icon.png') }}">
-            <input type="text" placeholder="Search">
+            <img src="{{ url_for('static', filename='icons/search-icon.png') }}" alt="Search">
+            <input type="text" placeholder="Search help topics">
         </div>
     </div>
 </nav>
@@ -27,18 +68,57 @@
 <div class="container">
     <div class="left-sidebar">
         <div class="imp-links">
-            <a href="{{ url_for('home') }}"><img src="{{ url_for('static', filename='icons/home-icon.png') }}">Home</a>
-            <a href="{{ url_for('students') }}"><img src="{{ url_for('static', filename='icons/info-circle-icon.png') }}">Students</a>
-            <a href="{{ url_for('companies') }}"><img src="{{ url_for('static', filename='icons/headphone-headset-icon.svg') }}">Companies</a>
+            <a href="{{ url_for(user_type + '_home') }}"><img src="{{ url_for('static', filename='icons/home-icon.png') }}">Home</a>
+            <a href="{{ url_for('students') }}"><img src="{{ url_for('static', filename='icons/info-circle-icon.png') }}" alt="Students">Students</a>
+            <a href="{{ url_for('companies') }}"><img src="{{ url_for('static', filename='icons/headphone-headset-icon.svg') }}" alt="Companies">Companies</a>
         </div>
     </div>
-    
+   
     <div class="main-content">
+        <div class="help-section">
+            <h2>Getting Started</h2>
+            <div class="help-item">
+                <h3>How to Navigate</h3>
+                <p>Use the sidebar menu to access different sections of the platform. The home page shows your dashboard with recent activities and important announcements.</p>
+            </div>
+            <div class="help-item">
+                <h3>Profile Setup</h3>
+                <p>Complete your profile by adding your academic details, skills, and work experience. A complete profile increases your visibility to potential employers.</p>
+            </div>
+        </div>
 
+        <div class="help-section">
+            <h2>Placement Process</h2>
+            <div class="help-item">
+                <h3>Application Process</h3>
+                <p>Browse available opportunities in the Companies section. Apply to positions that match your skills and interests. Keep track of your applications in your dashboard.</p>
+            </div>
+            <div class="help-item">
+                <h3>Interview Preparation</h3>
+                <p>Access resources and previous interview experiences in the Resources section. Stay updated with company-specific preparation materials.</p>
+            </div>
+        </div>
+
+        <div class="help-section">
+            <h2>Common Issues</h2>
+            <div class="help-item">
+                <h3>Technical Support</h3>
+                <p>For technical issues like login problems or profile updates, contact the technical support team through the support portal.</p>
+            </div>
+            <div class="help-item">
+                <h3>Placement Related Queries</h3>
+                <p>For queries about placement processes, eligibility, or company-specific questions, reach out to your placement coordinator.</p>
+            </div>
+        </div>
+
+        <div class="contact-support">
+            <h3>Need More Help?</h3>
+            <p>Contact the placement cell at placement@spit.ac.in or visit the placement office during working hours.</p>
+        </div>
     </div>
 
     <div class="right-sidebar">
-
+        <!-- Quick links or additional help resources can be added here -->
     </div>
 </div>
 {% endblock %}

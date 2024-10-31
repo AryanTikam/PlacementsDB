@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<title>PlacementsDB - Login</title>
+<!-- Import Firebase SDKs -->
+<script type="module">
+    // Firebase imports
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.10/firebase-app.js';
+    import { getAuth, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/9.6.10/firebase-auth.js';
+
+    // Firebase configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyAksgTQhrIfbvcTZD-lNNxctb35_xz8OqY",
+        authDomain: "placementsdb-52580.firebaseapp.com",
+        projectId: "placementsdb-52580",
+        storageBucket: "placementsdb-52580.appspot.com",
+        messagingSenderId: "288740928991",
+        appId: "1:288740928991:web:012fef5c6d7c759110e86a",
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Sign in function
+    window.signIn = async function() {
+        const userType = document.querySelector('input[name="userType"]:checked');
+        if (!userType) {
+            alert('Please select a user type');
+            return;
+        }
+
+        const provider = new GoogleAuthProvider();
+
+        try {
+            const result = await signInWithPopup(auth, provider);
+            const user = result.user;
+            console.log("User signed in:", user);
+
+            // Get the ID token
+            const idToken = await user.getIdToken();
+
+            // Send the ID token and user type to the backend for verification
+            const response = await fetch('/verify_token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    idToken: idToken,
+                    userType: userType.value,
+                }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || 'Network response was not ok');
+            }
+
+            const data = await response.json();
+            if (data.success) {
+                window.location.href = data.redirect; // Redirect to the user's home page
+            } else {
+                alert(data.error); // Handle errors returned from the server
+            }
+        } catch (error) {
+            console.error("Error during sign-in:", error);
+            alert('Sign in failed. Please try again. Error: ' + error.message);
+        }
+    }
+</script>
+<style>
+    .login-container {
+        max-width: 400px;
+        margin: 60px auto;
+        padding: 40px;
+        background: #fffeef;
+        border-radius: 15px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        animation: fadeIn 0.5s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .login-container h1 {
+        color: #2c3e50;
+        font-size: 2em;
+        margin-bottom: 30px;
+        font-weight: 600;
+    }
+
+    .login-logo {
+        width: 120px;
+        height: 120px;
+        margin: 0 auto 30px;
+        display: block;
+    }
+
+    .user-type-selection {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        margin: 30px 0;
+        padding: 20px;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    .user-type-selection label {
+        display: flex;
+        align-items: center;
+        padding: 12px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: #f8f9fa;
+        border: 2px solid transparent;
+    }
+
+    .user-type-selection label:hover {
+        background: #e9ecef;
+        transform: translateY(-2px);
+    }
+
+    .user-type-selection input[type="radio"] {
+        margin-right: 12px;
+        width: 18px;
+        height: 18px;
+        accent-color: #007bff;
+    }
+
+    .google-signin-btn {
+        background: #fff;
+        color: #333;
+        padding: 15px 30px;
+        border: none;
+        border-radius: 25px;
+        font-size: 1em;
+        font-weight: 500;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        margin: 0 auto;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+
+    .google-signin-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    .google-signin-btn img {
+        width: 24px;
+        height: 24px;
+        margin-right: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="login-container">
+    <img src="{{ url_for('static', filename='icons/SPIT_logo.png') }}" alt="SPIT Logo" class="login-logo">
+    <h1>Welcome!</h1>
+    
+    <div class="user-type-selection">
+        <label>
+            <input type="radio" name="userType" value="students" required>
+            <span>Student</span>
+        </label>
+        <label>
+            <input type="radio" name="userType" value="companies">
+            <span>Company Representative</span>
+        </label>
+        <label>
+            <input type="radio" name="userType" value="tpo">
+            <span>Training & Placement Officer</span>
+        </label>
+    </div>
+
+    <div class="signin-container">
+        <button onclick="signIn()" class="google-signin-btn">
+            <img src="{{ url_for('static', filename='icons/google-icon.png') }}" alt="Google" class="google-icon">
+            Sign in with Google
+        </button>
+    </div>
+</div>
+{% endblock %}

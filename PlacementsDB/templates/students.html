@@ -206,7 +206,7 @@
         <a href="#"><img src="{{ url_for('static', filename='icons/SPIT_logo.png') }}" class="logo"></a>
         <ul>
             <li><img src="{{ url_for('static', filename='icons/bell-icon.png') }}"></li>
-            <li><img src="{{ url_for('static', filename='icons/sliders-icon.png') }}"></li>
+            <li><a href="{{ url_for('logout') }}"><img src="{{ url_for('static', filename='icons/exit-icon.png') }}"></a></li>
         </ul>
     </div>
     <div class="page-name">
@@ -223,7 +223,7 @@
 <div class="container">
     <div class="left-sidebar">
         <div class="imp-links">
-            <a href="{{ url_for('home') }}"><img src="{{ url_for('static', filename='icons/home-icon.png') }}">Home</a>
+            <a href="{{ url_for(user_type + '_home') }}"><img src="{{ url_for('static', filename='icons/home-icon.png') }}">Home</a>
             <a href="{{ url_for('help') }}"><img src="{{ url_for('static', filename='icons/support-icon.png') }}">Help</a>
             <a href="{{ url_for('companies') }}"><img src="{{ url_for('static', filename='icons/headphone-headset-icon.svg') }}">Companies</a>
         </div>
