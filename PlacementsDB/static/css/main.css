@@ -230,6 +230,7 @@ nav {
     width: 67%;
     padding: 30px 20px;
     margin-bottom: 30px;
+    overflow: auto;
 }
 
 .main-content section {

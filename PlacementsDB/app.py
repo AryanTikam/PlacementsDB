@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect, url_for, request, session, jsonify
+from flask import Flask, render_template, redirect, url_for, request, session, jsonify, flash
 from functools import wraps
 import firebase_admin
 from firebase_admin import credentials, auth
@@ -42,7 +42,6 @@ def login():
 @app.route('/verify_token', methods=['POST'])
 def verify_token():
     try:
-        # Get the token and user type from the request
         data = request.get_json()
         id_token = data.get('idToken')
         user_type = data.get('userType')
@@ -50,25 +49,18 @@ def verify_token():
         if not id_token or not user_type:
             return jsonify({'error': 'Missing idToken or userType'}), 400
 
-        # Verify the Firebase ID token
         decoded_token = auth.verify_id_token(id_token)
         user_id = decoded_token['uid']
         email = decoded_token['email']
 
-        # Verify email domain for specific user types (optional)
         if user_type == 'students' and not email.endswith('@spit.ac.in'):
             return jsonify({'error': 'Please use your college email address'}), 403
 
-        # Store user information in session
         session['user_id'] = user_id
         session['user_type'] = user_type
         session['email'] = email
 
-        # Return success response with redirect URL
-        return jsonify({
-            'success': True,
-            'redirect': url_for(f'{user_type}_home') 
-        })
+        return jsonify({'success': True, 'redirect': url_for(f'{user_type}_home')})
 
     except auth.InvalidIdTokenError:
         return jsonify({'error': 'Invalid ID token'}), 403
@@ -111,7 +103,6 @@ def students():
     placed_students = len([s for s in students_data if len(s.get('projects', [])) > 0])
     total_projects = sum(len(student.get('projects', [])) for student in students_data)
     avg_projects = round(total_projects / total_students if total_students > 0 else 0, 1)
-    
     all_skills = [skill for student in students_data for skill in student.get('skills', [])]
     skill_counts = Counter(all_skills)
     max_skill_count = max(skill_counts.values()) if skill_counts else 1
@@ -158,7 +149,6 @@ def companies():
             'industry': request.form.get('industry'),
             'projects': [],
             'average_ctc': float(request.form.get('average_ctc', 0)),
-            'created_at': datetime.utcnow()
         }
 
         mongo.db.companies.insert_one(company)
@@ -204,83 +194,325 @@ def company_profile(company_id):
                            company=company,
                            interviews=interviews if interviews else None)
 
-
-@app.route('/projects', methods=['GET', 'POST'])
-@login_required(['tpo', 'companies', 'students'])
-def projects():
-    if request.method == 'POST':
-        project = {
-            'project_id': request.form.get('project_id'),
-            'title': request.form.get('title'),
-            'description': request.form.get('description'),
-            'start_date': request.form.get('start_date'),
-            'end_date': request.form.get('end_date'),
-            'company_id': request.form.get('company_id'),
-            'student_ids': request.form.getlist('student_ids'),
-            'skills_required': request.form.getlist('skills_required'),
-            'created_at': datetime.utcnow()
-        }
-        mongo.db.projects.insert_one(project)
-
-        mongo.db.companies.update_one(
-            {'company_id': project['company_id']},
-            {'$push': {'projects': project['project_id']}}
-        )
-
-        for student_id in project['student_ids']:
-            mongo.db.students.update_one(
-                {'student_id': student_id},
-                {'$push': {'projects': project['project_id']}}
-            )
-            
-        return redirect(url_for('projects'))
-    
-    projects = list(mongo.db.projects.find())
-    companies = list(mongo.db.companies.find())
-    students = list(mongo.db.students.find())
-    return render_template('projects.html', 
-                         projects=projects,
-                         companies=companies,
-                         students=students)
-
 @app.route('/help')
 def help():
     return render_template('help.html', user_type=session.get('user_type'))
 
-@app.route('/interviews', methods=['GET', 'POST'])
-@login_required(['tpo', 'companies', 'students'])
-def interviews():
-    if request.method == 'POST':
-        interview = {
-            'interview_id': request.form.get('interview_id'),
-            'company_id': request.form.get('company_id'),
-            'date': request.form.get('date'),
-            'time': request.form.get('time'),
-            'student_ids': request.form.getlist('student_ids'),
-            'created_at': datetime.utcnow()
-        }
-        mongo.db.interviews.insert_one(interview)
+# MongoDB collection routes with CRUD
+def fetch_collection_data(entity_type):
+    entity_map = {
+        'students': mongo.db.students,
+        'companies': mongo.db.companies,
+        'projects': mongo.db.projects,
+        'skills': mongo.db.skills,
+        'courses': mongo.db.courses,
+        'certificates': mongo.db.certificates,
+        'publications': mongo.db.publications,
+        'interviews': mongo.db.interviews
+    }
+    return entity_map.get(entity_type)
 
-        mongo.db.companies.update_one(
-            {'company_id': interview['company_id']},
-            {'$push': {'interviews': interview['interview_id']}}
-        )
+@app.route('/<entity_type>')
+@login_required(['tpo', 'students', 'companies'])
+def show_entities(entity_type):
+    collection = fetch_collection_data(entity_type)
+    if not collection:
+        return jsonify({'error': 'Invalid entity type'}), 400
 
-        for student_id in interview['student_ids']:
-            mongo.db.students.update_one(
-                {'student_id': student_id},
-                {'$push': {'interviews': interview['interview_id']}}
-            )
+    data = list(collection.find())
+    return render_template(f'{entity_type}.html', data=data, user_type=session.get('user_type'))
+
+# Add these helper functions at the top of app.py, after the imports
+def convert_string_to_array(value):
+    """Convert comma-separated string to array if needed"""
+    if isinstance(value, str):
+        return [item.strip() for item in value.split(',') if item.strip()]
+    return value
+
+def convert_string_to_number(value, convert_to='float'):
+    """Convert string to number if needed"""
+    if not value:
+        return 0
+    try:
+        return float(value) if convert_to == 'float' else int(value)
+    except (ValueError, TypeError):
+        return 0
+
+def convert_string_to_date(value):
+    """Convert string to datetime if needed"""
+    if not value:
+        return None
+    try:
+        # Handle common date formats
+        formats = [
+            '%Y-%m-%d',           # 2024-01-31
+            '%d/%m/%Y',           # 31/01/2024
+            '%d-%m-%Y',           # 31-01-2024
+            '%Y-%m-%d %H:%M:%S',  # 2024-01-31 14:30:00
+            '%Y-%m-%dT%H:%M:%S',  # 2024-01-31T14:30:00
+            '%Y-%m-%dT%H:%M:%S.%fZ'  # ISO format with timezone
+        ]
         
-        return redirect(url_for('interviews'))
+        for fmt in formats:
+            try:
+                return datetime.strptime(value, fmt)
+            except ValueError:
+                continue
+                
+        # If none of the formats match, try parsing ISO format
+        return datetime.fromisoformat(value.replace('Z', '+00:00'))
+    except (ValueError, TypeError):
+        return None
+
+def process_entity_data(entity_type, data):
+    """Process entity data based on entity type"""
+    processed_data = data.copy()
     
-    interviews = list(mongo.db.interviews.find())
-    companies = list(mongo.db.companies.find())
-    students = list(mongo.db.students.find())
-    return render_template('interviews.html', 
-                           interviews=interviews,
-                           companies=companies,
-                           students=students)
+    # Fields that should be arrays
+    array_fields = {
+        'students': ['skills', 'projects', 'courses', 'certificates', 'publications'],
+        'projects': ['students', 'skills'],
+        'companies': ['projects', 'interviews'],
+        'publications': ['authors'],
+        'interviews': ['student_ids']
+    }
+    
+    # Fields that should be numbers
+    number_fields = {
+        'students': {'cgpa': 'float'},
+        'companies': {'average_ctc': 'float'},
+        'projects': {'budget': 'float'},
+        'courses': {'credits': 'int', 'duration_weeks': 'int'},
+        'publications': {'citations': 'int'}
+    }
+    
+    # Fields that should be dates
+    date_fields = {
+        'projects': ['start_date', 'end_date'],
+        'certificates': ['valid_till'],
+        'publications': ['publication_date'],
+        'interviews': ['date']
+    }
+    
+    # Convert array fields
+    if entity_type in array_fields:
+        for field in array_fields[entity_type]:
+            if field in processed_data:
+                processed_data[field] = convert_string_to_array(processed_data[field])
+    
+    # Convert number fields
+    if entity_type in number_fields:
+        for field, number_type in number_fields[entity_type].items():
+            if field in processed_data:
+                processed_data[field] = convert_string_to_number(processed_data[field], number_type)
+    
+    # Convert date fields
+    if entity_type in date_fields:
+        for field in date_fields[entity_type]:
+            if field in processed_data:
+                converted_date = convert_string_to_date(processed_data[field])
+                if converted_date:
+                    processed_data[field] = converted_date
+
+    return processed_data
+
+# Update the add_entity route
+@app.route('/tpo/add/<entity_type>', methods=['GET', 'POST'])
+@login_required(['tpo'])
+def add_entity(entity_type):
+    collection_map = {
+        'students': mongo.db.students,
+        'companies': mongo.db.companies,
+        'projects': mongo.db.projects,
+        'skills': mongo.db.skills,
+        'courses': mongo.db.courses,
+        'certificates': mongo.db.certificates,
+        'publications': mongo.db.publications,
+        'interviews': mongo.db.interviews
+    }
+
+    if entity_type not in collection_map:
+        return jsonify({'error': 'Invalid entity type'}), 400
+
+    collection = collection_map[entity_type]
+
+    if request.method == 'POST':
+        # Get data from the request
+        new_entity_data = request.form.to_dict()
+        
+        try:
+            # Process the data before inserting
+            processed_data = process_entity_data(entity_type, new_entity_data)
+            
+            # Insert the processed entity into the database
+            result = collection.insert_one(processed_data)
+
+            return jsonify({
+                'success': True, 
+                'message': f'{entity_type.title()} added successfully', 
+                'id': str(result.inserted_id)
+            }), 201
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+# Update the edit_entity route to handle date serialization in GET response
+@app.route('/tpo/edit/<entity_type>/<entity_id>', methods=['GET', 'POST'])
+@login_required(['tpo'])
+def edit_entity(entity_type, entity_id):
+    collection_map = {
+        'students': mongo.db.students,
+        'companies': mongo.db.companies,
+        'projects': mongo.db.projects,
+        'skills': mongo.db.skills,
+        'courses': mongo.db.courses,
+        'certificates': mongo.db.certificates,
+        'publications': mongo.db.publications,
+        'interviews': mongo.db.interviews
+    }
+
+    id_field_map = {
+        'students': 'student_id',
+        'companies': 'company_id',
+        'projects': 'project_id',
+        'skills': 'skill_id',
+        'courses': 'course_id',
+        'certificates': 'certificate_id',
+        'publications': 'publication_id',
+        'interviews': 'interview_id'
+    }
+
+    if entity_type not in collection_map:
+        return jsonify({'error': 'Invalid entity type'}), 400
+
+    collection = collection_map[entity_type]
+    id_field = id_field_map[entity_type]
+
+    if request.method == 'POST':
+        update_data = request.form.to_dict()
+        
+        try:
+            # Process the data before updating
+            processed_data = process_entity_data(entity_type, update_data)
+            
+            # Update the entity in the database
+            result = collection.update_one(
+                {id_field: entity_id}, 
+                {'$set': processed_data}
+            )
+
+            if result.matched_count == 0:
+                return jsonify({'error': 'Entity not found'}), 404
+
+            return jsonify({
+                'success': True, 
+                'message': f'{entity_type.title()} updated successfully'
+            }), 200
+
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    # Handle GET request
+    entity_data = collection.find_one({id_field: entity_id})
+    if not entity_data:
+        return jsonify({'error': 'Entity not found'}), 404
+
+    # Convert ObjectId and datetime objects to strings for JSON response
+    entity_data['_id'] = str(entity_data['_id'])
+    for key, value in entity_data.items():
+        if isinstance(value, ObjectId):
+            entity_data[key] = str(value)
+        elif isinstance(value, datetime):
+            entity_data[key] = value.strftime('%Y-%m-%d')  # Format date as YYYY-MM-DD
+
+    return jsonify(entity_data)
+
+@app.route('/tpo/delete/<entity_type>/<entity_id>', methods=['DELETE'])
+@login_required(['tpo'])
+def delete_entity(entity_type, entity_id):
+    collection_map = {
+        'students': mongo.db.students,
+        'companies': mongo.db.companies,
+        'projects': mongo.db.projects,
+        'skills': mongo.db.skills,
+        'courses': mongo.db.courses,
+        'certificates': mongo.db.certificates,
+        'publications': mongo.db.publications,
+        'interviews': mongo.db.interviews
+    }
+
+    id_field_map = {
+        'students': 'student_id',
+        'companies': 'company_id',
+        'projects': 'project_id',
+        'skills': 'skill_id',
+        'courses': 'course_id',
+        'certificates': 'certificate_id',
+        'publications': 'publication_id',
+        'interviews': 'interview_id'
+    }
+
+    if entity_type not in collection_map:
+        return jsonify({'error': 'Invalid entity type'}), 400
+
+    collection = collection_map[entity_type]
+    id_field = id_field_map[entity_type]  # Get the correct ID field for the entity type
+
+    try:
+        # Handle cascading deletes based on entity type
+        if entity_type == 'students':
+            mongo.db.projects.update_many(
+                {'student_ids': entity_id},
+                {'$pull': {'student_ids': entity_id}}
+            )
+            mongo.db.publications.update_many(
+                {'authors': entity_id},
+                {'$pull': {'authors': entity_id}}
+            )
+
+        elif entity_type == 'companies':
+            projects = mongo.db.projects.find({'company_id': entity_id})
+            for project in projects:
+                mongo.db.students.update_many(
+                    {'projects': project['project_id']},
+                    {'$pull': {'projects': project['project_id']}}
+                )
+            mongo.db.projects.delete_many({'company_id': entity_id})
+            mongo.db.interviews.delete_many({'company_id': entity_id})
+
+        elif entity_type == 'projects':
+            mongo.db.students.update_many(
+                {'projects': entity_id},
+                {'$pull': {'projects': entity_id}}
+            )
+            mongo.db.companies.update_many(
+                {'projects': entity_id},
+                {'$pull': {'projects': entity_id}}
+            )
+
+        elif entity_type == 'interviews':
+            mongo.db.companies.update_many(
+                {'interviews': entity_id},
+                {'$pull': {'interviews': entity_id}}
+            )
+
+        # Delete the entity using the correct ID field
+        result = collection.delete_one({id_field: entity_id})
+
+        if result.deleted_count == 0:
+            return jsonify({'error': 'Entity not found'}), 404
+
+        return jsonify({'success': True, 'message': f'{entity_type.title()} deleted successfully'}), 200
+
+    except Exception as e:
+        return jsonify({'error': 'An error occurred during deletion.'}), 500
+    
+# TPO Edit Page Route
+@app.route('/tpo_edit')
+@login_required(['tpo'])
+def tpo_edit():
+    collections = {entity: list(fetch_collection_data(entity).find()) for entity in ['students', 'companies', 'projects', 'skills', 'courses', 'certificates', 'publications', 'interviews']}
+    return render_template('tpo_edit.html', **collections, user_type=session.get('user_type'))
 
 if __name__ == '__main__':
     app.run(debug=True)

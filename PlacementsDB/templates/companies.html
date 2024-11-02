@@ -49,6 +49,12 @@
         color: #007bff;
     }
 
+    
+    .project-item {
+        color: #666;
+        margin-bottom: 5px;
+    }
+
     .filters {
         background: #fffeef;
         padding: 15px;
@@ -135,7 +141,7 @@
     <div class="nav-left">
         <a href="#"><img src="{{ url_for('static', filename='icons/SPIT_logo.png') }}" class="logo"></a>
         <ul>
-            <li><img src="{{ url_for('static', filename='icons/bell-icon.png') }}"></li>
+            <li><a href="{{ url_for('tpo_edit') }}"><img src="{{ url_for('static', filename='icons/sliders-icon.png') }}"></a></li>
             <li><a href="{{ url_for('logout') }}"><img src="{{ url_for('static', filename='icons/exit-icon.png') }}"></a></li>
         </ul>
     </div>
@@ -145,7 +151,7 @@
     <div class="nav-right">
         <div class="search-box">
             <img src="{{ url_for('static', filename='icons/search-icon.png') }}">
-            <input type="text" placeholder="Search companies..." id="companySearch">
+            <input type="text" placeholder="Search companies" id="companySearch">
         </div>
     </div>
 </nav>

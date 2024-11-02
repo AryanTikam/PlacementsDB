@@ -120,13 +120,13 @@
                     {% for interview in interviews %}
                     <div class="interview-card">
                         <div class="interview-header">
-                            <span>Date: {{ interview.date }}</span>
+                            <span>Date: {{ interview.date.strftime('%Y-%m-%d') }}</span>
                             <span>Time: {{ interview.time }}</span>
                         </div>
-                        <div class="interview-detail">Location: {{ interview.location }}</div>
-                        <div class="interview-detail">Interviewer: {{ interview.interviewer }}</div>
+                        <div class="interview-detail"><b>Location:</b> {{ interview.location }}</div>
+                        <div class="interview-detail"><b>Interviewer:</b> {{ interview.interviewer }}</div>
                         <div class="interview-detail">
-                            Students:
+                            <b>Students:</b>
                             {% for student_id in interview.student_ids %}
                             {{ student_id }}{% if not loop.last %}, {% endif %}
                             {% endfor %}

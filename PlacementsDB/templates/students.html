@@ -128,11 +128,8 @@
     }
 
     .project-item {
-        background: #fffeef;
-        padding: 8px;
-        border-radius: 5px;
+        color: #666;
         margin-bottom: 5px;
-        font-size: 0.9em;
     }
 
     .quick-stats {
@@ -205,7 +202,7 @@
     <div class="nav-left">
         <a href="#"><img src="{{ url_for('static', filename='icons/SPIT_logo.png') }}" class="logo"></a>
         <ul>
-            <li><img src="{{ url_for('static', filename='icons/bell-icon.png') }}"></li>
+            <li><a href="{{ url_for('tpo_edit') }}"><img src="{{ url_for('static', filename='icons/sliders-icon.png') }}"></a></li>
             <li><a href="{{ url_for('logout') }}"><img src="{{ url_for('static', filename='icons/exit-icon.png') }}"></a></li>
         </ul>
     </div>
@@ -215,7 +212,7 @@
     <div class="nav-right">
         <div class="search-box">
             <img src="{{ url_for('static', filename='icons/search-icon.png') }}">
-            <input type="text" placeholder="Search students..." id="studentSearch">
+            <input type="text" placeholder="Search students" id="studentSearch">
         </div>
     </div>
 </nav>
@@ -279,7 +276,7 @@
                 <div class="student-info">
                     <div>📧 {{ student.email }}</div>
                     <div>📱 {{ student.phone }}</div>
-                    <div>📍 {{ student.address.city }}, {{ student.address.state }}</div>
+                    <div>📍 {{ student.address }}</div>
                 </div>
                 <div class="student-skills">
                     {% for skill in student.skills[:5] %}
@@ -289,6 +286,13 @@
                     <span class="skill-tag">+{{ student.skills|length - 5 }}</span>
                     {% endif %}
                 </div>
+                <br>
+                <!-- Display CGPA -->
+                <div>
+                    <strong>CGPA: </strong>
+                    <span>{{ student.cgpa if student.cgpa else 'N/A' }}</span>
+                </div>
+                <br>
                 {% if student.projects %}
                 <div class="projects-list">
                     <strong>Recent Projects:</strong>

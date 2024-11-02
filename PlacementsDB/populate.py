@@ -57,8 +57,7 @@ for skill in skills_list:
     skill_doc = {
         'skill_id': str(uuid.uuid4()),
         'name': skill,
-        'category': random.choice(['Technical', 'Soft Skills', 'Domain Knowledge']),
-        'created_at': datetime.utcnow()
+        'category': random.choice(['Technical', 'Soft Skills', 'Domain Knowledge'])
     }
     skills_data.append(skill_doc)
 db.skills.insert_many(skills_data)
@@ -76,8 +75,7 @@ for i in range(20):
         'phone': fake.phone_number(),
         'website': fake.url(),
         'projects': [],
-        'average_ctc': random.randint(50000, 150000),  # Add average CTC
-        'created_at': datetime.utcnow()
+        'average_ctc': random.randint(50000, 150000)  # Add average CTC
     }
     companies_data.append(company)
 db.companies.insert_many(companies_data)
@@ -91,8 +89,7 @@ for course_name in course_names:
         'name': course_name,
         'description': fake.text(max_nb_chars=200),
         'credits': random.randint(1, 4),
-        'duration_weeks': random.randint(8, 16),
-        'created_at': datetime.utcnow()
+        'duration_weeks': random.randint(8, 16)
     }
     courses_data.append(course)
 db.courses.insert_many(courses_data)
@@ -101,12 +98,12 @@ db.courses.insert_many(courses_data)
 print("Generating certificates...")
 certificates_data = []
 for cert_name in certificate_names:
+    valid_till_date = datetime.utcnow() + timedelta(days=365 * random.randint(1, 3))  # Valid for 1-3 years
     certificate = {
         'certificate_id': f'CERT{str(len(certificates_data)+1).zfill(3)}',
         'name': cert_name,
         'issuing_authority': fake.company(),
-        'validity_years': random.randint(1, 3),
-        'created_at': datetime.utcnow()
+        'valid_till': valid_till_date  # Replacing validity_years with valid_till
     }
     certificates_data.append(certificate)
 db.certificates.insert_many(certificates_data)
@@ -120,18 +117,13 @@ for i in range(100):
         'name': fake.name(),
         'email': fake.email(),
         'phone': fake.phone_number(),
-        'address': {
-            'street': fake.street_address(),
-            'city': fake.city(),
-            'state': fake.state(),
-            'zip': fake.zipcode()
-        },
+        'address': f"{fake.street_address()}, {fake.city()}, {fake.state()} {fake.zipcode()}",  # Address as a single string
         'skills': random.sample(skills_list, random.randint(3, 8)),
         'projects': [],
         'courses': random.sample([c['course_id'] for c in courses_data], random.randint(2, 5)),
         'certificates': random.sample([c['certificate_id'] for c in certificates_data], random.randint(1, 3)),
         'publications': [],
-        'created_at': datetime.utcnow()
+        'cgpa': round(random.uniform(0, 10), 2)  # Add CGPA field with a random value between 0 and 10
     }
     students_data.append(student)
 db.students.insert_many(students_data)
@@ -151,8 +143,7 @@ for i in range(50):
         'student_ids': random.sample([s['student_id'] for s in students_data], random.randint(2, 5)),
         'skills_required': random.sample(skills_list, random.randint(3, 6)),
         'status': random.choice(['Planning', 'In Progress', 'Completed', 'On Hold']),
-        'budget': random.randint(10000, 100000),
-        'created_at': datetime.utcnow()
+        'budget': random.randint(10000, 100000)
     }
     projects_data.append(project)
 db.projects.insert_many(projects_data)
@@ -186,8 +177,7 @@ for i in range(30):
         'journal': fake.company() + ' Journal',
         'publication_date': pub_date,
         'doi': f'10.{random.randint(1000,9999)}/{uuid.uuid4().hex[:8]}',
-        'citations': random.randint(0, 100),
-        'created_at': datetime.utcnow()
+        'citations': random.randint(0, 100)
     }
     publications_data.append(publication)
 db.publications.insert_many(publications_data)
@@ -206,7 +196,6 @@ print("Generating interviews...")
 interviews_data = []
 for i in range(20):
     interview_date = fake.date_between(start_date='-1y', end_date='today')
-    # Convert to datetime.datetime
     interview_datetime = datetime.combine(interview_date, datetime.min.time())
     interview = {
         'interview_id': f'INT{str(i+1).zfill(3)}',
@@ -215,8 +204,7 @@ for i in range(20):
         'time': fake.time(),
         'location': fake.city(),
         'interviewer': fake.name(),
-        'student_ids': random.sample([s['student_id'] for s in students_data], random.randint(1, 3)),
-        'created_at': datetime.utcnow()
+        'student_ids': random.sample([s['student_id'] for s in students_data], random.randint(1, 3))
     }
     interviews_data.append(interview)
 db.interviews.insert_many(interviews_data)
