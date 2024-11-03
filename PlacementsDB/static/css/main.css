@@ -244,6 +244,140 @@ nav {
     margin-bottom: 0;
 }
 
+.welcome-section {
+    background: linear-gradient(to right, rgb(253, 249, 223), rgb(242, 238, 212));
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.welcome-section h2 {
+    color: rgb(51, 51, 51);
+    margin-bottom: 0.5rem;
+}
+
+.welcome-section p {
+    color: rgb(102, 102, 102);
+}
+
+.main-content section {
+    transition: all 0.3s ease;
+}
+
+.main-content section:hover {
+    transform: translateY(-2px);
+}
+
+.main-content .card {
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.main-content .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+/* Card Containers */
+.cards-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem 0;
+}
+
+/* Interview and Publication Cards */
+.interview-card,
+.publication-card {
+    background-color: #ffffff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.interview-card:hover,
+.publication-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.icon-container {
+    background-color: rgb(242, 238, 212);
+    border-radius: 50%;
+    padding: 0.5rem;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-container img {
+    width: 20px;
+    height: 20px;
+}
+
+.date {
+    font-size: 0.875rem;
+    color: #666;
+}
+
+/* Card Content */
+.interview-card h4,
+.publication-card h4 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.position,
+.journal {
+    font-size: 1rem;
+    color: #444;
+    margin-bottom: 0.5rem;
+}
+
+.location,
+.authors {
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
+    color: #666;
+}
+
+.location img,
+.authors img {
+    width: 16px;
+    height: 16px;
+    margin-right: 0.5rem;
+}
+
+/* No Content State */
+.no-content {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 2rem;
+    background-color: rgb(242, 238, 212);
+    border-radius: 8px;
+    color: #666;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .cards-container {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* Media Queries */
 @media (max-width: 768px) {
     .container {

@@ -195,7 +195,7 @@ for publication in publications_data:
 print("Generating interviews...")
 interviews_data = []
 for i in range(20):
-    interview_date = fake.date_between(start_date='-1y', end_date='today')
+    interview_date = fake.date_between(start_date='today', end_date='+1y')
     interview_datetime = datetime.combine(interview_date, datetime.min.time())
     interview = {
         'interview_id': f'INT{str(i+1).zfill(3)}',
@@ -218,6 +218,16 @@ for interview in interviews_data:
     )
 
 print("Data generation completed!")
+
+# Ensure unique indexes for ID fields in MongoDB
+db.students.create_index("student_id", unique=True)
+db.companies.create_index("company_id", unique=True)
+db.projects.create_index("project_id", unique=True)
+db.skills.create_index("skill_id", unique=True)
+db.courses.create_index("course_id", unique=True)
+db.certificates.create_index("certificate_id", unique=True)
+db.publications.create_index("publication_id", unique=True)
+db.interviews.create_index("interview_id", unique=True)
 
 # Print some statistics
 print("\nDatabase Statistics:")

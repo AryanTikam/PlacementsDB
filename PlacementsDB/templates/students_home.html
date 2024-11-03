@@ -7,18 +7,20 @@
 {% block body %}
 <nav>
     <div class="nav-left">
-        <a href="#"><img src="{{ url_for('static', filename='icons/SPIT_logo.png') }}" class="logo"></a>
+        <img src="{{ url_for('static', filename='icons/SPIT_logo.png') }}" alt="Logo" class="logo">
         <ul>
-            <li><a href="{{ url_for('tpo_edit') }}"><img src="{{ url_for('static', filename='icons/sliders-icon.png') }}"></a></li>
-            <li><a href="{{ url_for('logout') }}"><img src="{{ url_for('static', filename='icons/exit-icon.png') }}"></a></li>
+            <li><a href="{{ url_for('tpo_edit') }}"><img src="{{ url_for('static', filename='icons/sliders-icon.png') }}" alt="Settings"></a></li>
+            <li><a href="{{ url_for('logout') }}"><img src="{{ url_for('static', filename='icons/exit-icon.png') }}" alt="Logout"></a></li>
         </ul>
     </div>
+
     <div class="page-name">
         <h1>Welcome Student!</h1>
     </div>
+
     <div class="nav-right">
         <div class="search-box">
-            <img src="{{ url_for('static', filename='icons/search-icon.png') }}">
+            <img src="{{ url_for('static', filename='icons/search-icon.png') }}" alt="Search">
             <input type="text" placeholder="Search">
         </div>
     </div>
@@ -27,18 +29,59 @@
 <div class="container">
     <div class="left-sidebar">
         <div class="imp-links">
-            <a href="{{ url_for('students') }}"><img src="{{ url_for('static', filename='icons/info-circle-icon.png') }}">Students</a>
-            <a href="{{ url_for('help') }}"><img src="{{ url_for('static', filename='icons/support-icon.png') }}">Help</a>
-            <a href="{{ url_for('companies') }}"><img src="{{ url_for('static', filename='icons/headphone-headset-icon.svg') }}">Companies</a>
+            <a href="{{ url_for('students') }}">
+                <img src="{{ url_for('static', filename='icons/info-circle-icon.png') }}" alt="Students">
+                Students
+            </a>
+            <a href="{{ url_for('help') }}">
+                <img src="{{ url_for('static', filename='icons/support-icon.png') }}" alt="Help">
+                Help
+            </a>
+            <a href="{{ url_for('companies') }}">
+                <img src="{{ url_for('static', filename='icons/headphone-headset-icon.svg') }}" alt="Companies">
+                Companies
+            </a>
         </div>
     </div>
-    
+
     <div class="main-content">
-        <!-- Main content goes here -->
+        <section class="welcome-section">
+            <h2>Welcome to PlacementsDB!</h2>
+            <p>Your one-stop solution for viewing and managing placements, company profiles, and student records.</p>
+        </section>
+
+        <section class="interviews-section">
+            <h3>Upcoming Interviews</h3>
+            <div class="cards-container">
+                {% if interviews %}
+                    {% for interview in interviews %}
+                    <div class="interview-card">
+                        <div class="card-header">
+                            <div class="icon-container">
+                                <img src="{{ url_for('static', filename='icons/calendar-icon.png') }}" alt="Calendar">
+                            </div>
+                            <span class="date">{{ interview.date.strftime('%B %d, %Y') }} {{ interview.time }}</span>
+                        </div>
+                        <h4>{{ interview.company_name }}</h4>
+                        <p class="position">{{ interview.position }}</p>
+                        <p class="location">
+                            <img src="{{ url_for('static', filename='icons/location-icon.png') }}" alt="Location">
+                            {{ interview.location }}
+                        </p>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="no-content">
+                        <p>No upcoming interviews scheduled</p>
+                    </div>
+                {% endif %}
+            </div>
+        </section>
     </div>
 
-    <div class="right-sidebar">
+    <div class="right-sidebar" style="text-align: center">
         <!-- Right sidebar content -->
+            <h4>Announcements</h4>
     </div>
 </div>
 {% endblock %}

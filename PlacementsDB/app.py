@@ -70,19 +70,143 @@ def verify_token():
 @app.route('/students_home')
 @login_required(['students'])
 def students_home():
-    students_data = list(mongo.db.students.find())
-    return render_template('students_home.html', students=students_data)
+    # Get upcoming interviews - next 3 scheduled interviews
+    upcoming_interviews = list(mongo.db.interviews.aggregate([
+        {
+            '$match': {
+                'date': {'$gte': datetime.now()}  # Only future interviews
+            }
+        },
+        {
+            '$lookup': {
+                'from': 'companies',
+                'localField': 'company_id',
+                'foreignField': 'company_id',
+                'as': 'company'
+            }
+        },
+        {
+            '$unwind': '$company'
+        },
+        {
+            '$project': {
+                'date': 1,
+                'time': 1,
+                'position': 1,
+                'company_name': '$company.name',
+                'location': '$company.location'
+            }
+        },
+        {
+            '$sort': {'date': 1}
+        },
+        {
+            '$limit': 3
+        }
+    ]))
+
+    return render_template('students_home.html', 
+                            interviews=upcoming_interviews)
 
 @app.route('/companies_home')
 @login_required(['companies'])
 def companies_home():
-    companies_data = list(mongo.db.companies.find())
-    return render_template('companies_home.html', companies=companies_data)
+    # Get recent publications - latest 3 publications
+    recent_publications = list(mongo.db.publications.aggregate([
+        {
+            '$lookup': {
+                'from': 'students',
+                'localField': 'authors',
+                'foreignField': 'student_id',
+                'as': 'student_authors'
+            }
+        },
+        {
+            '$project': {
+                'title': 1,
+                'publication_date': 1,
+                'journal': 1,
+                'authors': '$student_authors.name'
+            }
+        },
+        {
+            '$sort': {'publication_date': -1}
+        },
+        {
+            '$limit': 3
+        }
+    ]))
+
+    return render_template('students_home.html', 
+                            publications=recent_publications)
 
 @app.route('/tpo_home')
 @login_required(['tpo'])
 def tpo_home():
-    return render_template('tpo_home.html')
+    # Get upcoming interviews - next 3 scheduled interviews
+    upcoming_interviews = list(mongo.db.interviews.aggregate([
+        {
+            '$match': {
+                'date': {'$gte': datetime.now()}  # Only future interviews
+            }
+        },
+        {
+            '$lookup': {
+                'from': 'companies',
+                'localField': 'company_id',
+                'foreignField': 'company_id',
+                'as': 'company'
+            }
+        },
+        {
+            '$unwind': '$company'
+        },
+        {
+            '$project': {
+                'date': 1,
+                'time': 1,
+                'position': 1,
+                'company_name': '$company.name',
+                'location': '$company.location'
+            }
+        },
+        {
+            '$sort': {'date': 1}
+        },
+        {
+            '$limit': 3
+        }
+    ]))
+
+    # Get recent publications - latest 3 publications
+    recent_publications = list(mongo.db.publications.aggregate([
+        {
+            '$lookup': {
+                'from': 'students',
+                'localField': 'authors',
+                'foreignField': 'student_id',
+                'as': 'student_authors'
+            }
+        },
+        {
+            '$project': {
+                'title': 1,
+                'publication_date': 1,
+                'journal': 1,
+                'authors': '$student_authors.name'
+            }
+        },
+        {
+            '$sort': {'publication_date': -1}
+        },
+        {
+            '$limit': 3
+        }
+    ]))
+
+    return render_template('tpo_home.html',
+                            interviews=upcoming_interviews,
+                            publications=recent_publications)
 
 @app.route('/unauthorized')
 def unauthorized():
