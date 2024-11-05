@@ -79,6 +79,23 @@
         border: 1px solid #ddd;
     }
 
+    .sort-button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        padding: 8px 15px;
+        border-radius: 5px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        transition: background-color 0.3s ease;
+    }
+
+    .sort-button:hover {
+        background-color: #0056b3;
+    }
+
     .student-stats {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -262,13 +279,16 @@
                     <option value="{{ course.course_id }}">{{ course.name }}</option>
                     {% endfor %}
                 </select>
+                <button class="sort-button" id="sortCgpaButton">
+                    Sort by CGPA
+                </button>
             </div>
         </div>
 
         <!-- Students Grid -->
-        <div class="student-grid">
+        <div class="student-grid" id="studentGrid">
             {% for student in students %}
-            <div class="student-card">
+            <div class="student-card" data-cgpa="{{ student.cgpa|default(0)|float }}">
                 <div class="student-header">
                     <div class="student-name">{{ student.name }}</div>
                     <div class="student-id">{{ student.student_id }}</div>
@@ -292,6 +312,13 @@
                     <strong>CGPA: </strong>
                     <span>{{ student.cgpa if student.cgpa else 'N/A' }}</span>
                 </div>
+                <!-- Display the company name if the student is placed -->
+                {% if student.placed_by %}
+                <div>
+                    <strong>Placed By: </strong> 
+                    <span>{% for company in student.placed_by %}{{ company }}{% if not loop.last %}, {% endif %}{% endfor %}</span>
+                </div>
+                {% endif %}
                 <br>
                 {% if student.projects %}
                 <div class="projects-list">
@@ -309,7 +336,7 @@
                     {% endfor %}
                 </div>
                 {% endif %}
-                <a href="#" class="view-more">View Full Profile →</a>
+                <a href="{{ url_for('student_profile', student_id=student.student_id) }}" class="view-more">View Full Profile →</a>
             </div>
             {% endfor %}
         </div>
@@ -390,6 +417,31 @@ document.getElementById('skillFilter').addEventListener('change', function(e) {
             card.style.display = 'none';
         }
     });
+});
+
+// New sorting functionality
+let isSortedAscending = false;
+document.getElementById('sortCgpaButton').addEventListener('click', function() {
+    const grid = document.getElementById('studentGrid');
+    const cards = Array.from(grid.querySelectorAll('.student-card'));
+    
+    cards.sort((a, b) => {
+        const cgpaA = parseFloat(a.dataset.cgpa) || 0;
+        const cgpaB = parseFloat(b.dataset.cgpa) || 0;
+        return isSortedAscending ? cgpaA - cgpaB : cgpaB - cgpaA;
+    });
+    
+    // Clear the grid and re-append sorted cards
+    grid.innerHTML = '';
+    cards.forEach(card => grid.appendChild(card));
+    
+    // Toggle sort direction
+    isSortedAscending = !isSortedAscending;
+    
+    // Optional: Update button text or icon to show current sort direction
+    this.textContent = isSortedAscending 
+        ? 'Sort by CGPA ↑' 
+        : 'Sort by CGPA ↓';
 });
 </script>
 {% endblock %}

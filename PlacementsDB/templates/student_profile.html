@@ -1,0 +1,303 @@
+{% extends 'base.html' %}
+
+{% block head %}
+<title>PlacementsDB - {{ student.name }} Profile</title>
+<style>
+    /* Student Profile Page */
+.student-profile {
+    background-color: rgb(253, 249, 223);
+    border-radius: 25px;
+    padding: 30px 20px;
+    margin-bottom: 30px;
+    overflow: auto;
+    justify-content: center;
+}
+
+.student-card {
+    background-color: rgb(222, 217, 179);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+}
+
+.student-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.student-name {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: rgb(51, 51, 51);
+}
+
+.student-id {
+    font-size: 0.875rem;
+    color: rgb(102, 102, 102);
+}
+
+.student-details {
+    font-size: 0.875rem;
+    color: rgb(102, 102, 102);
+    margin-bottom: 15px;
+}
+
+.student-skills h2 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: rgb(51, 51, 51);
+    margin-bottom: 10px;
+}
+
+.student-skills ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.student-skills li {
+    font-size: 0.875rem;
+    color: rgb(102, 102, 102);
+    margin-bottom: 5px;
+}
+
+.placed-by-section {
+    background-color: rgb(222, 217, 179);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+}
+
+.placed-by-section h2 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: rgb(51, 51, 51);
+    margin-bottom: 15px;
+}
+
+.company-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: rgb(51, 51, 51);
+}
+
+.company-id {
+    font-size: 0.875rem;
+    color: rgb(102, 102, 102);
+}
+
+.projects-section {
+    background-color: rgb(222, 217, 179);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+}
+
+.projects-section h2 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: rgb(51, 51, 51);
+    margin-bottom: 15px;
+}
+
+.project-card {
+    background-color: rgb(253, 249, 223);
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 15px;
+}
+
+.project-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.project-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: rgb(51, 51, 51);
+}
+
+.project-id {
+    font-size: 0.875rem;
+    color: rgb(102, 102, 102);
+}
+
+.project-details p {
+    font-size: 0.875rem;
+    color: rgb(102, 102, 102);
+    margin-bottom: 5px;
+}
+
+.publications-section {
+    background-color: rgb(222, 217, 179);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.publications-section h2 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: rgb(51, 51, 51);
+    margin-bottom: 15px;
+}
+
+.publication-card {
+    background-color: rgb(253, 249, 223);
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 15px;
+}
+
+.publication-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.publication-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: rgb(51, 51, 51);
+}
+
+.publication-id {
+    font-size: 0.875rem;
+    color: rgb(102, 102, 102);
+}
+
+.publication-details p {
+    font-size: 0.875rem;
+    color: rgb(102, 102, 102);
+    margin-bottom: 5px;
+}
+
+.author {
+    margin-right: 5px;
+}
+
+.back-link {
+    display: block;
+    text-align: center;
+    color: rgb(102, 102, 102);
+    font-size: 0.875rem;
+    margin-top: 20px;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.back-link:hover {
+    color: rgb(51, 51, 51);
+}
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container">
+    <div class="student-profile">
+        <div class="student-card">
+            <div class="project-card">
+                <div class="student-header">
+                    <h1 class="student-name">{{ student.name }}</h1>
+                    <span class="student-id">{{ student.student_id }}</span>
+                </div>
+                <div class="student-details">
+                    <p><b>CGPA:</b> {{ student.cgpa }}</p>
+                    <p>{{ student.email }}</p>
+                    <p>{{ student.phone }}</p>
+                    <p>{{ student.address }}</p>
+                </div>
+            </div>
+            <div class="student-skills">
+                <h2>Skills</h2>
+                <ul>
+                    {% for skill in student.skills %}
+                    <li>{{ skill }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="placed-by-section">
+            <h2>Placed By</h2>
+            {% for company in placed_by %}
+            <div class="publication-card">
+                <h3 class="company-name">{{ company.name }}</h3>
+                <span class="company-id">{{ company.company_id }}</span>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="projects-section">
+            <h2>Projects</h2>
+            {% if projects %}
+            <div class="project-cards">
+                {% for project in projects %}
+                <div class="project-card">
+                    <div class="project-header">
+                        <h3 class="project-title">{{ project.title }}</h3>
+                        <span class="project-id">{{ project.project_id }}</span>
+                    </div>
+                    <div class="project-details">
+                        <p class="project-description"><h5>{{ project.description }}</h5></p>
+                        <br>
+                        <p class="project-dates">
+                            <span class="start-date">{{ project.start_date.strftime('%Y-%m-%d') }}</span> -
+                            <span class="end-date">{{ project.end_date.strftime('%Y-%m-%d') }}</span>
+                        </p>
+                        <p class="project-company"><b>Company:</b> {{ project.company_name }}</p>
+                        <p class="project-status"><b>Status:</b> {{ project.status }}</p>
+                        <p class="project-budget"><b>Budget:</b> {{ '{:,.2f}'.format(project.budget) }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p>No projects found for this student.</p>
+            {% endif %}
+        </div>
+
+        <div class="publications-section">
+            <h2>Publications</h2>
+            {% if publications %}
+            <div class="publication-cards">
+                {% for publication in publications %}
+                <div class="publication-card">
+                    <div class="publication-header">
+                        <h3 class="publication-title">{{ publication.title }}</h3>
+                        <span class="publication-id">{{ publication.publication_id }}</span>
+                    </div>
+                    <div class="publication-details">
+                        <p class="publication-journal"><h5>{{ publication.journal }}</h5></p>
+                        <br>
+                        <p class="publication-date"><b>Date:</b> {{ publication.publication_date.strftime('%Y-%m-%d') }}</p>
+                        <p class="publication-doi"><b>DOI:</b> {{ publication.doi }}</p>
+                        <p class="publication-citations"><b>Citations:</b> {{ publication.citations }}</p>
+                        <p class="publication-authors">
+                            <b>Authors:</b>
+                            {% for author in publication.authors %}
+                            <span class="author">{{ author }}</span>
+                            {% endfor %}
+                        </p>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p>No publications found for this student.</p>
+            {% endif %}
+        </div>
+        <a href="{{ url_for('students') }}" class="back-link">← Back to Students</a>
+    </div>
+</div>
+{% endblock %}

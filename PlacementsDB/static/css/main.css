@@ -288,7 +288,8 @@ nav {
 
 /* Interview and Publication Cards */
 .interview-card,
-.publication-card {
+.publication-card,
+.project-card {
     background-color: #ffffff;
     border-radius: 12px;
     padding: 1.5rem;
@@ -297,7 +298,8 @@ nav {
 }
 
 .interview-card:hover,
-.publication-card:hover {
+.publication-card:hover,
+.project-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
@@ -332,7 +334,8 @@ nav {
 
 /* Card Content */
 .interview-card h4,
-.publication-card h4 {
+.publication-card h4,
+.project-card h4 {
     font-size: 1.25rem;
     font-weight: 600;
     margin-bottom: 0.5rem;

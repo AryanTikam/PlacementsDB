@@ -217,12 +217,22 @@
                     <span>{{ company.average_ctc if company.average_ctc else 'N/A' }}</span>
                 </div>
                 <br>
+                {% if company.students_placed %}
+                <div>
+                    <strong>Students Placed:</strong>
+                    {% for student in company.students_placed %}
+                    <div class="project-item">{{ student }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% if company.projects %}
                 <div>
                     <strong>Projects:</strong>
                     {% for project in company.projects[:2] %}
                     <div class="project-item">{{ project }}</div>
                     {% endfor %}
                 </div>
+                {% endif %}
                 <a href="{{ url_for('company_profile', company_id=company.company_id) }}" class="view-more">View Full Profile →</a>
             </div>
             {% endfor %}

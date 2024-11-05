@@ -272,6 +272,7 @@
                                     <th>Contact Email</th>
                                     <th>Phone</th>
                                     <th>Website</th>
+                                    <th>Students Placed</th>
                                     <th>Projects</th>
                                     <th>Interviews</th>
                                     <th>Average CTC</th>
@@ -288,6 +289,7 @@
                                     <td>{{ company.contact_email }}</td>
                                     <td>{{ company.phone }}</td>
                                     <td>{{ company.website }}</td>
+                                    <td>{{ company.students_placed|join(', ') }}</td>
                                     <td>{{ company.projects|join(', ') }}</td>
                                     <td>{{ company.interviews|join(', ') }}</td>
                                     <td>{{ company.average_ctc }}</td>
@@ -321,6 +323,7 @@
                                 <th>Description</th>
                                 <th>Start Date</th>
                                 <th>End Date</th>
+                                <th>Student IDs</th>
                                 <th>Company ID</th>
                                 <th>Status</th>
                                 <th>Budget</th>
@@ -335,6 +338,7 @@
                                 <td>{{ project.description }}</td>
                                 <td>{{ project.start_date }}</td>
                                 <td>{{ project.end_date }}</td>
+                                <td>{{ project.student_ids|join(', ') }}</td>
                                 <td>{{ project.company_id }}</td>
                                 <td>{{ project.status }}</td>
                                 <td>{{ project.budget }}</td>
@@ -646,6 +650,7 @@ const entityFields = {
         { name: 'contact_email', type: 'email', label: 'Contact Email' },
         { name: 'phone', type: 'text', label: 'Phone' },
         { name: 'website', type: 'text', label: 'Website' },
+        { name: 'students_placed', type: 'text', label: 'Students Placed'},
         { name: 'projects', type: 'text', label: 'Projects'},
         { name: 'interviews', type: 'text', label: 'Interviews'},
         { name: 'average_ctc', type: 'number', label: 'Average CTC' }

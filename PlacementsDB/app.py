@@ -221,10 +221,48 @@ def logout():
 @app.route('/students')
 @login_required(['tpo', 'companies'])
 def students():
-    students_data = list(mongo.db.students.find())
+    students_data = list(mongo.db.students.aggregate([
+        {
+            '$lookup': {
+                'from': 'companies',
+                'localField': 'student_id',
+                'foreignField': 'students_placed',
+                'as': 'placed_by'
+            }
+        },
+        {
+            '$project': {
+                'student_id': 1,
+                'name': 1,
+                'email': 1,
+                'phone': 1,
+                'address': 1,
+                'skills': 1,
+                'projects': 1,
+                'courses': 1,
+                'certificates': 1,
+                'publications': 1,
+                'cgpa': 1,
+                'placed_by': {
+                    '$map': {
+                        'input': '$placed_by',
+                        'as': 'company',
+                        'in': '$$company.name'
+                    }
+                }
+            }
+        }
+    ]))
+    companies_data = list(mongo.db.companies.find())
+
     total_students = len(students_data)
     total_publications = sum(len(student.get('publications', [])) for student in students_data)
-    placed_students = len([s for s in students_data if len(s.get('projects', [])) > 0])
+    # Collect all student IDs in the students_placed arrays across all companies
+    placed_student_ids = set()
+    for company in companies_data:
+        placed_student_ids.update(company.get('students_placed', []))
+    # Count students who appear in the placed_student_ids set
+    placed_students = len([s for s in students_data if s.get('student_id') in placed_student_ids])
     total_projects = sum(len(student.get('projects', [])) for student in students_data)
     avg_projects = round(total_projects / total_students if total_students > 0 else 0, 1)
     all_skills = [skill for student in students_data for skill in student.get('skills', [])]
@@ -246,6 +284,7 @@ def students():
     return render_template(
         'students.html',
         students=students_data,
+        companies=companies_data,
         total_students=total_students,
         placed_students=placed_students,
         avg_projects=avg_projects,
@@ -256,6 +295,31 @@ def students():
         max_skill_count=max_skill_count,
         user_type=session.get('user_type')
     )
+
+@app.route('/students/<student_id>')
+@login_required(['tpo', 'companies'])
+def student_profile(student_id):
+    student = mongo.db.students.find_one({'student_id': student_id})
+    if not student:
+        return "Student not found", 404
+
+    # Find companies that have placed this student
+    placed_by = list(mongo.db.companies.find({'students_placed': student_id}))
+
+    # Find projects the student has worked on
+    projects = list(mongo.db.projects.find({'student_ids': student_id}))
+    for project in projects:
+        project['company_name'] = mongo.db.companies.find_one({'company_id': project['company_id']})['name']
+
+    # Find publications the student has authored
+    publications = list(mongo.db.publications.find({'authors': student_id}))
+
+    return render_template('student_profile.html',
+                           student=student,
+                           placed_by=placed_by,
+                           projects=projects,
+                           publications=publications,
+                           user_type=session.get('user_type'))
 
 @app.route('/companies', methods=['GET', 'POST'])
 @login_required(['tpo', 'students'])
@@ -281,7 +345,7 @@ def companies():
     companies = list(mongo.db.companies.find().sort('name'))
     total_companies = len(companies)
     total_projects = sum(len(company.get('projects', [])) for company in companies)
-    active_companies = len([company for company in companies if company.get('projects')])
+    active_companies = len([company for company in companies if company.get('students_placed')])
 
     active_company_stats = {}
     for company in companies:
@@ -395,8 +459,8 @@ def process_entity_data(entity_type, data):
     # Fields that should be arrays
     array_fields = {
         'students': ['skills', 'projects', 'courses', 'certificates', 'publications'],
-        'projects': ['students', 'skills'],
-        'companies': ['projects', 'interviews'],
+        'projects': ['student_ids', 'skills_required'],
+        'companies': ['projects', 'interviews', 'students_placed'],
         'publications': ['authors'],
         'interviews': ['student_ids']
     }
@@ -440,7 +504,9 @@ def process_entity_data(entity_type, data):
 
     return processed_data
 
-# Update the add_entity route
+from bson import ObjectId
+from datetime import datetime
+
 @app.route('/tpo/add/<entity_type>', methods=['GET', 'POST'])
 @login_required(['tpo'])
 def add_entity(entity_type):
@@ -461,15 +527,20 @@ def add_entity(entity_type):
     collection = collection_map[entity_type]
 
     if request.method == 'POST':
-        # Get data from the request
         new_entity_data = request.form.to_dict()
-        
+
         try:
-            # Process the data before inserting
+            # Process data before inserting
             processed_data = process_entity_data(entity_type, new_entity_data)
             
             # Insert the processed entity into the database
             result = collection.insert_one(processed_data)
+            
+            # Update related collections if the entity type requires it
+            if entity_type == 'projects':
+                update_project_references(processed_data)
+            elif entity_type in ['students', 'companies']:
+                update_entity_project_references(entity_type, processed_data)
 
             return jsonify({
                 'success': True, 
@@ -480,7 +551,7 @@ def add_entity(entity_type):
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
-# Update the edit_entity route to handle date serialization in GET response
+
 @app.route('/tpo/edit/<entity_type>/<entity_id>', methods=['GET', 'POST'])
 @login_required(['tpo'])
 def edit_entity(entity_type, entity_id):
@@ -514,9 +585,9 @@ def edit_entity(entity_type, entity_id):
 
     if request.method == 'POST':
         update_data = request.form.to_dict()
-        
+
         try:
-            # Process the data before updating
+            # Process data before updating
             processed_data = process_entity_data(entity_type, update_data)
             
             # Update the entity in the database
@@ -527,6 +598,12 @@ def edit_entity(entity_type, entity_id):
 
             if result.matched_count == 0:
                 return jsonify({'error': 'Entity not found'}), 404
+            
+            # Update related collections if the entity type requires it
+            if entity_type == 'projects':
+                update_project_references(processed_data)
+            elif entity_type in ['students', 'companies']:
+                update_entity_project_references(entity_type, processed_data)
 
             return jsonify({
                 'success': True, 
@@ -547,9 +624,55 @@ def edit_entity(entity_type, entity_id):
         if isinstance(value, ObjectId):
             entity_data[key] = str(value)
         elif isinstance(value, datetime):
-            entity_data[key] = value.strftime('%Y-%m-%d')  # Format date as YYYY-MM-DD
+            entity_data[key] = value.strftime('%Y-%m-%d')
 
     return jsonify(entity_data)
+
+
+def update_project_references(project_data):
+    """Update project references in students and companies collections."""
+    project_id = project_data.get('project_id')
+    company_id = project_data.get('company_id')
+    student_ids = project_data.get('student_ids', [])
+
+    # Update company projects
+    if company_id:
+        mongo.db.companies.update_one(
+            {'company_id': company_id},
+            {'$addToSet': {'projects': project_id}}
+        )
+
+    # Update student projects
+    for student_id in student_ids:
+        mongo.db.students.update_one(
+            {'student_id': student_id},
+            {'$addToSet': {'projects': project_id}}
+        )
+
+
+def update_entity_project_references(entity_type, entity_data):
+    """Update project references in the projects collection based on changes in students or companies."""
+    if entity_type == 'students':
+        student_id = entity_data.get('student_id')
+        project_ids = entity_data.get('projects', [])
+        
+        # Update each project with the student_id
+        for project_id in project_ids:
+            mongo.db.projects.update_one(
+                {'project_id': project_id},
+                {'$addToSet': {'student_ids': student_id}}
+            )
+
+    elif entity_type == 'companies':
+        company_id = entity_data.get('company_id')
+        project_ids = entity_data.get('projects', [])
+
+        # Update each project with the company_id
+        for project_id in project_ids:
+            mongo.db.projects.update_one(
+                {'project_id': project_id},
+                {'$set': {'company_id': company_id}}
+            )
 
 @app.route('/tpo/delete/<entity_type>/<entity_id>', methods=['DELETE'])
 @login_required(['tpo'])
@@ -592,6 +715,10 @@ def delete_entity(entity_type, entity_id):
             mongo.db.publications.update_many(
                 {'authors': entity_id},
                 {'$pull': {'authors': entity_id}}
+            )
+            mongo.db.companies.update_many(
+                {'students_placed': entity_id},
+                {'$pull': {'students_placed': entity_id}}
             )
 
         elif entity_type == 'companies':
