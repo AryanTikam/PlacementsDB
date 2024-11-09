@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Placement Analytics</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.1.3/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --base-color: rgb(253, 249, 223);
+            --accent-1: #FF9F43;
+            --accent-2: #54A0FF;
+            --accent-3: #00d2d3;
+        }
+        
+        body {
+            background-color: var(--base-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .chart-container {
+            background-color: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .chart-container:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+        
+        .download-btn {
+            background: var(--accent-2);
+            transition: all 0.3s ease;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            color: white;
+            font-weight: 600;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .download-btn:hover {
+            background: #4A90E2;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body>
+    <div class="container mx-auto px-4 py-8">
+        <div class="page-header d-flex justify-content-between align-items-center p-3 rounded-lg mb-6">
+            <a href="{{ url_for('tpo_home') }}" class="btn btn-secondary btn-sm hover:bg-gray-700 transition-colors">
+                <i class="fas fa-arrow-left mr-1"></i> Go to Dashboard
+            </a>
+            <div></div>
+        </div>
+
+        <div class="stat-card text-center mb-8">
+            <h1 class="text-3xl font-bold mb-2 text-gray-800">Placement Analytics Dashboard</h1>
+        </div>
+
+        <!-- Download Button -->
+        <div class="flex justify-center mb-8">
+            <button onclick="downloadCSV()" class="download-btn flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+                Download Report
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            <!-- Student Placement Status -->
+            <div class="chart-container p-6">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">Student Placement Status</h2>
+                <div class="aspect-w-1 aspect-h-1">
+                    <canvas id="placementChart"></canvas>
+                </div>
+                <div class="mt-4 text-center">
+                    <p class="text-2xl font-bold text-gray-800">{{ placement_stats.placed_percentage }}%</p>
+                    <p class="text-gray-600">
+                        {{ placement_stats.placed }} placed out of {{ placement_stats.total }} students
+                    </p>
+                </div>
+            </div>
+
+            <!-- Company Categories -->
+            <div class="chart-container p-6">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">Company Categories by CTC</h2>
+                <div class="aspect-w-1 aspect-h-1">
+                    <canvas id="companyChart"></canvas>
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 rounded-full bg-[#54A0FF] mr-2"></div>
+                        <p class="text-gray-700">Normal: < 8 LPA</p>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 rounded-full bg-[#00d2d3] mr-2"></div>
+                        <p class="text-gray-700">Dream: 8-12 LPA</p>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 rounded-full bg-[#FF9F43] mr-2"></div>
+                        <p class="text-gray-700">Super Dream: 12-20 LPA</p>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-3 h-3 rounded-full bg-[#ee5253] mr-2"></div>
+                        <p class="text-gray-700">Elite: > 20 LPA</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Average Package Bar Chart -->
+        <div class="chart-container p-6">
+            <h2 class="text-xl font-semibold mb-4 text-gray-800">Average Package by Category</h2>
+            <div class="aspect-w-2 aspect-h-1">
+                <canvas id="packageChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Student Placement Chart
+        const placementCtx = document.getElementById('placementChart').getContext('2d');
+        new Chart(placementCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Placed', 'Unplaced'],
+                datasets: [{
+                    data: [{{ placement_stats.placed }}, {{ placement_stats.unplaced }}],
+                    backgroundColor: ['#54A0FF', '#FF9F43']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Company Categories Chart
+        const companyCtx = document.getElementById('companyChart').getContext('2d');
+        new Chart(companyCtx, {
+            type: 'pie',
+            data: {
+                labels: [{% for stat in company_stats %}'{{ stat.category }}',{% endfor %}],
+                datasets: [{
+                    data: [{% for stat in company_stats %}{{ stat.count }},{% endfor %}],
+                    backgroundColor: ['#54A0FF', '#00d2d3', '#FF9F43', '#ee5253']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Average Package Bar Chart
+        const packageCtx = document.getElementById('packageChart').getContext('2d');
+        new Chart(packageCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Normal', 'Dream', 'Super Dream', 'Elite'],
+                datasets: [{
+                    label: 'Average Package (LPA)',
+                    data: [
+                        {{ average_ctc_by_category['Normal'] }},
+                        {{ average_ctc_by_category['Dream'] }},
+                        {{ average_ctc_by_category['Super Dream'] }},
+                        {{ average_ctc_by_category['Elite'] }}
+                    ],
+                    backgroundColor: ['#54A0FF', '#00d2d3', '#FF9F43', '#ee5253'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Package in LPA'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+
+        // CSV Download Function (keeping the existing function)
+        function downloadCSV() {
+            const placementData = {
+                placed: {{ placement_stats.placed }},
+                unplaced: {{ placement_stats.unplaced }},
+                total: {{ placement_stats.total }},
+                placement_rate: {{ placement_stats.placed_percentage }}
+            };
+
+            const companyData = [
+                {% for stat in company_stats %}
+                {
+                    category: '{{ stat.category }}',
+                    count: {{ stat.count }}
+                },
+                {% endfor %}
+            ];
+
+            const packageData = [
+                { category: 'Normal', average: {{ average_ctc_by_category['Normal'] }} },
+                { category: 'Dream', average: {{ average_ctc_by_category['Dream'] }} },
+                { category: 'Super Dream', average: {{ average_ctc_by_category['Super Dream'] }} },
+                { category: 'Elite', average: {{ average_ctc_by_category['Elite'] }} }
+            ];
+
+            let csvContent = "Placement Statistics\n";
+            csvContent += "Total Students," + placementData.total + "\n";
+            csvContent += "Placed Students," + placementData.placed + "\n";
+            csvContent += "Unplaced Students," + placementData.unplaced + "\n";
+            csvContent += "Placement Rate," + placementData.placement_rate + "%\n\n";
+            
+            csvContent += "Company Categories\n";
+            csvContent += "Category,Count\n";
+            companyData.forEach(item => {
+                csvContent += `${item.category},${item.count}\n`;
+            });
+
+            csvContent += "\nAverage Package by Category\n";
+            csvContent += "Category,Average Package (LPA)\n";
+            packageData.forEach(item => {
+                csvContent += `${item.category},${item.average}\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            if (navigator.msSaveBlob) {
+                navigator.msSaveBlob(blob, 'placement_analytics.csv');
+            } else {
+                link.href = window.URL.createObjectURL(blob);
+                link.download = 'placement_analytics.csv';
+                link.style.display = 'none';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+    </script>
+</body>
+</html>

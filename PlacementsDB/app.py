@@ -504,9 +504,6 @@ def process_entity_data(entity_type, data):
 
     return processed_data
 
-from bson import ObjectId
-from datetime import datetime
-
 @app.route('/tpo/add/<entity_type>', methods=['GET', 'POST'])
 @login_required(['tpo'])
 def add_entity(entity_type):
@@ -529,6 +526,10 @@ def add_entity(entity_type):
     if request.method == 'POST':
         new_entity_data = request.form.to_dict()
 
+        # Check if CGPA is valid for students
+        if entity_type == 'students' and float(new_entity_data.get('cgpa', 0)) < 6:
+            return jsonify({'error': 'CGPA must be >= 6 for placements'}), 400
+
         try:
             # Process data before inserting
             processed_data = process_entity_data(entity_type, new_entity_data)
@@ -550,7 +551,6 @@ def add_entity(entity_type):
 
         except Exception as e:
             return jsonify({'error': str(e)}), 500
-
 
 @app.route('/tpo/edit/<entity_type>/<entity_id>', methods=['GET', 'POST'])
 @login_required(['tpo'])
@@ -585,6 +585,10 @@ def edit_entity(entity_type, entity_id):
 
     if request.method == 'POST':
         update_data = request.form.to_dict()
+
+        # Check if CGPA is valid for students
+        if entity_type == 'students' and float(update_data.get('cgpa', 0)) < 6:
+            return jsonify({'error': 'CGPA must be >= 6 for placements'}), 400
 
         try:
             # Process data before updating
@@ -627,7 +631,6 @@ def edit_entity(entity_type, entity_id):
             entity_data[key] = value.strftime('%Y-%m-%d')
 
     return jsonify(entity_data)
-
 
 def update_project_references(project_data):
     """Update project references in students and companies collections."""
@@ -764,6 +767,79 @@ def delete_entity(entity_type, entity_id):
 def tpo_edit():
     collections = {entity: list(fetch_collection_data(entity).find()) for entity in ['students', 'companies', 'projects', 'skills', 'courses', 'certificates', 'publications', 'interviews']}
     return render_template('tpo_edit.html', **collections, user_type=session.get('user_type'))
+
+# Add this function to app.py
+def categorize_company(ctc):
+    """Categorize company based on CTC"""
+    if ctc > 2000000:  # > 20 LPA
+        return 'Elite'
+    elif ctc > 1200000:  # > 12 LPA
+        return 'Super Dream'
+    elif ctc > 800000:  # > 8 LPA
+        return 'Dream'
+    else:
+        return 'Normal'
+
+@app.route('/placement_analytics')
+@login_required(['tpo'])
+def placement_analytics():
+    # Get all companies and their placement data
+    companies = list(mongo.db.companies.find())
+    
+    # Calculate company categories based on CTC
+    company_categories = {
+        'Normal': {'count': 0, 'total_ctc': 0},
+        'Dream': {'count': 0, 'total_ctc': 0},
+        'Super Dream': {'count': 0, 'total_ctc': 0},
+        'Elite': {'count': 0, 'total_ctc': 0}
+    }
+    
+    for company in companies:
+        category = categorize_company(company.get('average_ctc', 0))
+        company_categories[category]['count'] += 1
+        company_categories[category]['total_ctc'] += company.get('average_ctc', 0)
+    
+    # Calculate average CTC for each category
+    average_ctc_by_category = {
+        category: (info['total_ctc'] / info['count']) if info['count'] > 0 else 0
+        for category, info in company_categories.items()
+    }
+
+    # Calculate placed vs unplaced students
+    total_students = mongo.db.students.count_documents({})
+    
+    # Get unique placed students across all companies
+    placed_students = set()
+    for company in companies:
+        placed_students.update(company.get('students_placed', []))
+    
+    placed_count = len(placed_students)
+    unplaced_count = total_students - placed_count
+    
+    placement_stats = {
+        'placed': placed_count,
+        'unplaced': unplaced_count,
+        'total': total_students,
+        'placed_percentage': round((placed_count / total_students * 100), 1) if total_students > 0 else 0
+    }
+    
+    # Get companies count by category
+    company_stats = []
+    for category, count in company_categories.items():
+        company_stats.append({
+            'category': category,
+            'count': count['count'],
+            'average_ctc': average_ctc_by_category[category],
+            'percentage': round((count['count'] / len(companies) * 100), 1) if companies else 0
+        })
+    
+    return render_template(
+        'placement_analytics.html',
+        placement_stats=placement_stats,
+        company_stats=company_stats,
+        average_ctc_by_category=average_ctc_by_category,  # Pass the average CTC data
+        user_type=session.get('user_type')
+    )
 
 if __name__ == '__main__':
     app.run(debug=True)

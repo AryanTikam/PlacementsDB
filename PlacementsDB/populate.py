@@ -75,7 +75,7 @@ for i in range(20):
         'phone': fake.phone_number(),
         'website': fake.url(),
         'projects': [],
-        'average_ctc': random.randint(50000, 150000),
+        'average_ctc': random.randint(500000, 4000000),
         'students_placed': []  # Add empty list for students placed
     }
     companies_data.append(company)
@@ -124,7 +124,7 @@ for i in range(100):
         'courses': random.sample([c['course_id'] for c in courses_data], random.randint(2, 5)),
         'certificates': random.sample([c['certificate_id'] for c in certificates_data], random.randint(1, 3)),
         'publications': [],
-        'cgpa': round(random.uniform(0, 10), 2)
+        'cgpa': round(random.uniform(6, 10), 2)
     }
     students_data.append(student)
 db.students.insert_many(students_data)
