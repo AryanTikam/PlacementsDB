@@ -219,12 +219,14 @@
                 </div>
             </div>
             <div class="student-skills">
-                <h2>Skills</h2>
-                <ul>
-                    {% for skill in student.skills %}
-                    <li>{{ skill }}</li>
-                    {% endfor %}
-                </ul>
+                <div class="project-card">
+                    <h2>Skills</h2>
+                    <ul>
+                        {% for skill in student.skills %}
+                        <li>{{ skill }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
             </div>
         </div>
 

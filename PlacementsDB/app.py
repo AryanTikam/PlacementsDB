@@ -558,10 +558,11 @@ def get_validation_rules():
     """Define validation rules for each entity type based on MongoDB schema"""
     return {
         'students': {
-            'required': ['student_id', 'name', 'email', 'phone', 'cgpa'],
+            'required': ['student_id', 'name', 'email', 'phone', 'address', 'cgpa'],
             'types': {
                 'cgpa': float,
                 'phone': str,
+                'address': str,
                 'email': str
             }
         },

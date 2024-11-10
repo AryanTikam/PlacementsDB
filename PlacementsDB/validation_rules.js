@@ -2,12 +2,13 @@
 db.runCommand({ collMod: "students",
     validator: {
       $jsonSchema: {
-        required: ["student_id", "name", "email", "phone", "cgpa"],
+        required: ["student_id", "name", "email", "phone", "address", "cgpa"],
         properties: {
           student_id: { bsonType: "string" },
           name: { bsonType: "string" },
           email: { bsonType: "string" },
           phone: { bsonType: "string" },
+          address: { bsonType: "string" },
           cgpa: { bsonType: "double" }
         }
       }
