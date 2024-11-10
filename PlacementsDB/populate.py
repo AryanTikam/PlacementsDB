@@ -72,11 +72,11 @@ for i in range(20):
         'location': fake.city(),
         'industry': random.choice(industries),
         'contact_email': fake.company_email(),
+        'average_ctc': random.randint(500000, 4000000),
         'phone': fake.phone_number(),
         'website': fake.url(),
         'projects': [],
-        'average_ctc': random.randint(500000, 4000000),
-        'students_placed': []  # Add empty list for students placed
+        'students_placed': []
     }
     companies_data.append(company)
 db.companies.insert_many(companies_data)
@@ -124,7 +124,7 @@ for i in range(100):
         'courses': random.sample([c['course_id'] for c in courses_data], random.randint(2, 5)),
         'certificates': random.sample([c['certificate_id'] for c in certificates_data], random.randint(1, 3)),
         'publications': [],
-        'cgpa': round(random.uniform(6, 10), 2)
+        'cgpa': round(random.uniform(6.0, 10.0), 2)
     }
     students_data.append(student)
 db.students.insert_many(students_data)
@@ -149,23 +149,6 @@ for i in range(50):
     projects_data.append(project)
 db.projects.insert_many(projects_data)
 
-# Update company projects
-print("Updating company projects...")
-for project in projects_data:
-    db.companies.update_one(
-        {'company_id': project['company_id']},
-        {'$push': {'projects': project['project_id']}}
-    )
-
-# Update student projects
-print("Updating student projects...")
-for project in projects_data:
-    for student_id in project['student_ids']:
-        db.students.update_one(
-            {'student_id': student_id},
-            {'$push': {'projects': project['project_id']}}
-        )
-
 # Generate Publications
 print("Generating publications...")
 publications_data = []
@@ -183,25 +166,18 @@ for i in range(30):
     publications_data.append(publication)
 db.publications.insert_many(publications_data)
 
-# Update student publications
-print("Updating student publications...")
-for publication in publications_data:
-    for author_id in publication['authors']:
-        db.students.update_one(
-            {'student_id': author_id},
-            {'$push': {'publications': publication['publication_id']}}
-        )
-
 # Generate Interviews
 print("Generating interviews...")
 interviews_data = []
 for i in range(20):
-    interview_date = fake.date_between(start_date='today', end_date='+1y')
-    interview_datetime = datetime.combine(interview_date, datetime.min.time())
+    interview_date = datetime.combine(
+        fake.date_between(start_date='today', end_date='+1y'),
+        datetime.min.time()
+    )
     interview = {
         'interview_id': f'INT{str(i+1).zfill(3)}',
         'company_id': random.choice(companies_data)['company_id'],
-        'date': interview_datetime,
+        'date': interview_date,
         'time': fake.time(),
         'location': fake.city(),
         'interviewer': fake.name(),
@@ -210,40 +186,50 @@ for i in range(20):
     interviews_data.append(interview)
 db.interviews.insert_many(interviews_data)
 
-# Update company interviews
-print("Updating company interviews...")
-for interview in interviews_data:
+# Update relationships
+print("Updating relationships...")
+
+# Update company projects
+for project in projects_data:
     db.companies.update_one(
-        {'company_id': interview['company_id']},
-        {'$push': {'interviews': interview['interview_id']}}
+        {'company_id': project['company_id']},
+        {'$push': {'projects': project['project_id']}}
     )
+
+# Update student projects
+for project in projects_data:
+    for student_id in project['student_ids']:
+        db.students.update_one(
+            {'student_id': student_id},
+            {'$push': {'projects': project['project_id']}}
+        )
+
+# Update student publications
+for publication in publications_data:
+    for author_id in publication['authors']:
+        db.students.update_one(
+            {'student_id': author_id},
+            {'$push': {'publications': publication['publication_id']}}
+        )
 
 # Generate Students Placed
 print("Generating students placed for each company...")
 all_students = [s['student_id'] for s in students_data]
-placed_students = set()  # Track students who are already placed
+placed_students = set()
 
 for company in companies_data:
-    # Select students who are not yet placed by any company
     available_students = list(set(all_students) - placed_students)
-    # Randomly select a subset of students who will be placed by this company
     num_to_place = random.randint(1, min(5, len(available_students)))
     company_placed_students = random.sample(available_students, num_to_place)
-    
-    # Update the placed_students set to prevent future companies from placing these students
     placed_students.update(company_placed_students)
     
-    # Update the company document in MongoDB with the selected placed students
     db.companies.update_one(
         {'company_id': company['company_id']},
         {'$set': {'students_placed': company_placed_students}}
     )
 
-print("Unique student placements across companies have been completed!")
-
-print("Data generation completed!")
-
-# Ensure unique indexes for ID fields in MongoDB
+# Create indexes
+print("Creating indexes...")
 db.students.create_index("student_id", unique=True)
 db.companies.create_index("company_id", unique=True)
 db.projects.create_index("project_id", unique=True)
@@ -253,12 +239,13 @@ db.certificates.create_index("certificate_id", unique=True)
 db.publications.create_index("publication_id", unique=True)
 db.interviews.create_index("interview_id", unique=True)
 
-# Print some statistics
-print(f"Inserted {db.students.count_documents({})} students.")
-print(f"Inserted {db.companies.count_documents({})} companies.")
-print(f"Inserted {db.projects.count_documents({})} projects.")
-print(f"Inserted {db.skills.count_documents({})} skills.")
-print(f"Inserted {db.courses.count_documents({})} courses.")
-print(f"Inserted {db.certificates.count_documents({})} certificates.")
-print(f"Inserted {db.publications.count_documents({})} publications.")
-print(f"Inserted {db.interviews.count_documents({})} interviews.")
+# Print statistics
+print("\nData generation completed!")
+print(f"Inserted {db.students.count_documents({})} students")
+print(f"Inserted {db.companies.count_documents({})} companies")
+print(f"Inserted {db.projects.count_documents({})} projects")
+print(f"Inserted {db.skills.count_documents({})} skills")
+print(f"Inserted {db.courses.count_documents({})} courses")
+print(f"Inserted {db.certificates.count_documents({})} certificates")
+print(f"Inserted {db.publications.count_documents({})} publications")
+print(f"Inserted {db.interviews.count_documents({})} interviews")

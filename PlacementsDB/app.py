@@ -56,6 +56,7 @@ def verify_token():
         if user_type == 'students' and not email.endswith('@spit.ac.in'):
             return jsonify({'error': 'Please use your college email address'}), 403
 
+        session.clear()
         session['user_id'] = user_id
         session['user_type'] = user_type
         session['email'] = email
@@ -137,7 +138,7 @@ def companies_home():
         }
     ]))
 
-    return render_template('students_home.html', 
+    return render_template('companies_home.html', 
                             publications=recent_publications)
 
 @app.route('/tpo_home')
@@ -504,6 +505,159 @@ def process_entity_data(entity_type, data):
 
     return processed_data
 
+def is_student_placed(student_id):
+    """Check if a student is already placed by any company"""
+    placed_companies = mongo.db.companies.find({'students_placed': student_id})
+    return mongo.db.companies.count_documents({'students_placed': student_id}) > 0
+
+def update_project_references(project_data):
+    """Update project references in students and companies collections."""
+    project_id = project_data.get('project_id')
+    company_id = project_data.get('company_id')
+    student_ids = project_data.get('student_ids', [])
+
+    # Update company projects
+    if company_id:
+        mongo.db.companies.update_one(
+            {'company_id': company_id},
+            {'$addToSet': {'projects': project_id}}
+        )
+
+    # Update student projects
+    for student_id in student_ids:
+        mongo.db.students.update_one(
+            {'student_id': student_id},
+            {'$addToSet': {'projects': project_id}}
+        )
+
+def update_entity_project_references(entity_type, entity_data):
+    """Update project references in the projects collection based on changes in students or companies."""
+    if entity_type == 'students':
+        student_id = entity_data.get('student_id')
+        project_ids = entity_data.get('projects', [])
+        
+        # Update each project with the student_id
+        for project_id in project_ids:
+            mongo.db.projects.update_one(
+                {'project_id': project_id},
+                {'$addToSet': {'student_ids': student_id}}
+            )
+
+    elif entity_type == 'companies':
+        company_id = entity_data.get('company_id')
+        project_ids = entity_data.get('projects', [])
+
+        # Update each project with the company_id
+        for project_id in project_ids:
+            mongo.db.projects.update_one(
+                {'project_id': project_id},
+                {'$set': {'company_id': company_id}}
+            )
+
+def get_validation_rules():
+    """Define validation rules for each entity type based on MongoDB schema"""
+    return {
+        'students': {
+            'required': ['student_id', 'name', 'email', 'phone', 'cgpa'],
+            'types': {
+                'cgpa': float,
+                'phone': str,
+                'email': str
+            }
+        },
+        'companies': {
+            'required': ['company_id', 'name', 'location', 'industry', 'contact_email', 'average_ctc'],
+            'types': {
+                'average_ctc': float,
+                'contact_email': str
+            }
+        },
+        'projects': {
+            'required': ['project_id', 'title', 'description', 'start_date', 'company_id', 'student_ids', 'status'],
+            'types': {
+                'start_date': 'date',
+                'student_ids': list
+            }
+        },
+        'skills': {
+            'required': ['skill_id', 'name', 'category'],
+            'types': {}
+        },
+        'courses': {
+            'required': ['course_id', 'name', 'credits', 'duration_weeks'],
+            'types': {
+                'credits': int,
+                'duration_weeks': int
+            }
+        },
+        'certificates': {
+            'required': ['certificate_id', 'name', 'issuing_authority', 'valid_till'],
+            'types': {
+                'valid_till': 'date'
+            }
+        },
+        'publications': {
+            'required': ['publication_id', 'title', 'authors', 'journal', 'publication_date', 'doi'],
+            'types': {
+                'publication_date': 'date',
+                'authors': list
+            }
+        },
+        'interviews': {
+            'required': ['interview_id', 'company_id', 'date', 'time', 'location', 'interviewer', 'student_ids'],
+            'types': {
+                'date': 'date',
+                'student_ids': list
+            }
+        }
+    }
+
+def validate_entity_data(entity_type, data):
+    """
+    Validate entity data against defined rules
+    Returns (is_valid, error_message)
+    """
+    rules = get_validation_rules().get(entity_type)
+    if not rules:
+        return False, f"Unknown entity type: {entity_type}"
+
+    # Check required fields
+    for field in rules['required']:
+        if field not in data or not data[field] or data[field].strip() == "":
+            return False, f"Required field '{field}' is missing or empty"
+
+    # Validate types
+    for field, expected_type in rules['types'].items():
+        if field in data and data[field]:
+            try:
+                if expected_type == 'date':
+                    # Date validation is handled by convert_string_to_date
+                    if not convert_string_to_date(data[field]):
+                        return False, f"Invalid date format for field '{field}'"
+                elif expected_type == list:
+                    # Convert string to list if needed
+                    if isinstance(data[field], str):
+                        data[field] = convert_string_to_array(data[field])
+                    if not isinstance(data[field], list):
+                        return False, f"Field '{field}' must be a list"
+                else:
+                    # Numeric and other type validations
+                    value = data[field]
+                    if expected_type == float:
+                        float_val = float(value)
+                        if field == 'cgpa' and (float_val < 6 or float_val > 10):
+                            return False, "CGPA must be between 6 and 10"
+                        if field == 'average_ctc' and float_val < 0:
+                            return False, "Average CTC cannot be negative"
+                    elif expected_type == int:
+                        int_val = int(value)
+                        if int_val < 0:
+                            return False, f"Field '{field}' cannot be negative"
+            except (ValueError, TypeError):
+                return False, f"Invalid type for field '{field}'. Expected {expected_type.__name__}"
+
+    return True, None
+
 @app.route('/tpo/add/<entity_type>', methods=['GET', 'POST'])
 @login_required(['tpo'])
 def add_entity(entity_type):
@@ -526,18 +680,28 @@ def add_entity(entity_type):
     if request.method == 'POST':
         new_entity_data = request.form.to_dict()
 
-        # Check if CGPA is valid for students
-        if entity_type == 'students' and float(new_entity_data.get('cgpa', 0)) < 6:
-            return jsonify({'error': 'CGPA must be >= 6 for placements'}), 400
+        # Validate the data
+        is_valid, error_message = validate_entity_data(entity_type, new_entity_data)
+        if not is_valid:
+            return jsonify({'error': error_message}), 400
 
         try:
             # Process data before inserting
             processed_data = process_entity_data(entity_type, new_entity_data)
             
+            # Additional business logic checks
+            if entity_type == 'companies':
+                placed_students = convert_string_to_array(processed_data.get('students_placed', []))
+                for student_id in placed_students:
+                    if is_student_placed(student_id):
+                        return jsonify({
+                            'error': f'Student {student_id} is already placed by another company'
+                        }), 400
+
             # Insert the processed entity into the database
             result = collection.insert_one(processed_data)
             
-            # Update related collections if the entity type requires it
+            # Update related collections if needed
             if entity_type == 'projects':
                 update_project_references(processed_data)
             elif entity_type in ['students', 'companies']:
@@ -585,15 +749,31 @@ def edit_entity(entity_type, entity_id):
 
     if request.method == 'POST':
         update_data = request.form.to_dict()
-
-        # Check if CGPA is valid for students
-        if entity_type == 'students' and float(update_data.get('cgpa', 0)) < 6:
-            return jsonify({'error': 'CGPA must be >= 6 for placements'}), 400
+        
+        # Validate the data
+        is_valid, error_message = validate_entity_data(entity_type, update_data)
+        if not is_valid:
+            return jsonify({'error': error_message}), 400
 
         try:
             # Process data before updating
             processed_data = process_entity_data(entity_type, update_data)
             
+            # Additional business logic checks
+            if entity_type == 'companies':
+                new_placed_students = convert_string_to_array(processed_data.get('students_placed', []))
+                current_company = collection.find_one({id_field: entity_id})
+                current_placed_students = current_company.get('students_placed', []) if current_company else []
+                
+                # Check only newly added students
+                new_additions = [s for s in new_placed_students if s not in current_placed_students]
+                
+                for student_id in new_additions:
+                    if is_student_placed(student_id):
+                        return jsonify({
+                            'error': f'Student {student_id} is already placed by another company'
+                        }), 400
+
             # Update the entity in the database
             result = collection.update_one(
                 {id_field: entity_id}, 
@@ -603,7 +783,7 @@ def edit_entity(entity_type, entity_id):
             if result.matched_count == 0:
                 return jsonify({'error': 'Entity not found'}), 404
             
-            # Update related collections if the entity type requires it
+            # Update related collections if needed
             if entity_type == 'projects':
                 update_project_references(processed_data)
             elif entity_type in ['students', 'companies']:
@@ -631,51 +811,6 @@ def edit_entity(entity_type, entity_id):
             entity_data[key] = value.strftime('%Y-%m-%d')
 
     return jsonify(entity_data)
-
-def update_project_references(project_data):
-    """Update project references in students and companies collections."""
-    project_id = project_data.get('project_id')
-    company_id = project_data.get('company_id')
-    student_ids = project_data.get('student_ids', [])
-
-    # Update company projects
-    if company_id:
-        mongo.db.companies.update_one(
-            {'company_id': company_id},
-            {'$addToSet': {'projects': project_id}}
-        )
-
-    # Update student projects
-    for student_id in student_ids:
-        mongo.db.students.update_one(
-            {'student_id': student_id},
-            {'$addToSet': {'projects': project_id}}
-        )
-
-
-def update_entity_project_references(entity_type, entity_data):
-    """Update project references in the projects collection based on changes in students or companies."""
-    if entity_type == 'students':
-        student_id = entity_data.get('student_id')
-        project_ids = entity_data.get('projects', [])
-        
-        # Update each project with the student_id
-        for project_id in project_ids:
-            mongo.db.projects.update_one(
-                {'project_id': project_id},
-                {'$addToSet': {'student_ids': student_id}}
-            )
-
-    elif entity_type == 'companies':
-        company_id = entity_data.get('company_id')
-        project_ids = entity_data.get('projects', [])
-
-        # Update each project with the company_id
-        for project_id in project_ids:
-            mongo.db.projects.update_one(
-                {'project_id': project_id},
-                {'$set': {'company_id': company_id}}
-            )
 
 @app.route('/tpo/delete/<entity_type>/<entity_id>', methods=['DELETE'])
 @login_required(['tpo'])
