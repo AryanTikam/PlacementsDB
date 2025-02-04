@@ -11,11 +11,11 @@ app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'  # Change this to a secure secret key
 
 # MongoDB configuration
-app.config["MONGO_URI"] = "mongodb://localhost:27017/university_db"
+app.config["MONGO_URI"] = "mongodb://localhost:27017/university_db" 
 mongo = PyMongo(app)
 
 # Initialize Firebase Admin SDK
-cred = credentials.Certificate("placementsdb-52580-firebase-adminsdk-bpn2o-13b94a68ac.json")
+cred = credentials.Certificate("your_certificate.json_here")
 firebase_admin.initialize_app(cred)
 
 # Login required decorator
